@@ -11,7 +11,7 @@ import { DummyApp } from '@windows/apps/DummyApp';
 import { ChatApp } from '@windows/apps/ChatApp';
 import { TicketApp } from '@windows/apps/TicketApp';
 import { MailApp } from '@windows/apps/MailApp';
-
+import { FileExplorerApp } from '@windows/apps/FileExplorerApp';
 
 interface WindowFrameProps {
   window: WindowInstance;
@@ -31,11 +31,13 @@ function renderApp(appId: string) {
       return <ChatApp />;
     case 'ticket':
       return <TicketApp />;
+    case 'mail':
+      return <MailApp />;
+    case 'files':
+      return <FileExplorerApp />;
     case 'dummy':
     default:
       return <DummyApp />;
-    case 'mail':
-      return <MailApp />;
   }
 }
 
@@ -44,7 +46,6 @@ export function WindowFrame({ window: win }: WindowFrameProps) {
   const closeWindow = useUiStore((s) => s.closeWindow);
   const moveWindow = useUiStore((s) => s.moveWindow);
   const minimizeWindow = useUiStore((s) => s.minimizeWindow);
-  const hideWindow = useUiStore((s) => s.hideWindow);
   const toggleMaximize = useUiStore((s) => s.toggleMaximizeWindow);
   const dragRef = useRef<DragState | null>(null);
 

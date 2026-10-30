@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Archive, Inbox, Mail as MailIcon, Paperclip, Send, Trash2 } from 'lucide-react';
+import { Archive, Check, Inbox, Mail as MailIcon, Paperclip, Send, Trash2, X } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useGameStore } from '@core/stores/gameStore';
 import { loadMailData } from '@core/services/dataLoader';
@@ -21,13 +21,109 @@ const FOLDERS: readonly FolderMeta[] = [
   { id: 'trash', label: 'Trash', icon: Trash2 },
 ];
 
+const OFFBOARDING_PDF = 'berita_acara_bagas.pdf';
+
+interface OffboardingPdfProps {
+  playerName: string;
+  signed: boolean;
+  onSign: () => void;
+  onClose: () => void;
+}
+
+function OffboardingPdf({ playerName, signed, onSign, onClose }: OffboardingPdfProps) {
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label={OFFBOARDING_PDF}
+      onClick={onClose}
+      className="absolute inset-0 z-10 flex flex-col items-center bg-black/70 p-4"
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="flex min-h-0 w-full max-w-[640px] flex-1 flex-col overflow-hidden rounded-sm bg-white text-black shadow-2xl"
+      >
+        <div className="flex h-9 shrink-0 items-center justify-between bg-neutral-700 px-3 text-xs text-neutral-100">
+          <span className="truncate">{OFFBOARDING_PDF}</span>
+          <button
+            type="button"
+            aria-label="Tutup"
+            onClick={onClose}
+            className="flex h-6 w-6 items-center justify-center rounded transition-colors hover:bg-white/20"
+          >
+            <X size={14} strokeWidth={1.75} />
+          </button>
+        </div>
+
+        <div className="chat-scroll min-h-0 flex-1 overflow-y-auto px-16 py-12 font-serif text-[13px] leading-relaxed">
+          <h1 className="text-center text-lg font-bold uppercase tracking-wide">
+            Berita Acara Offboarding
+          </h1>
+          <p className="mb-8 text-center text-xs text-neutral-600">
+            Nusadata · Departemen HR
+          </p>
+
+          <p className="mb-4">
+            Dokumen ini menyatakan bahwa proses offboarding atas nama{' '}
+            <strong>Bagas Prasetyo</strong> telah dilaksanakan dan serah terima tugas,
+            akses, serta perangkat telah diselesaikan kepada tim IT.
+          </p>
+
+          <ol className="mb-4 list-decimal space-y-1 pl-6">
+            <li>Akun dan hak akses sistem telah dinonaktifkan.</li>
+            <li>Perangkat kerja telah dikembalikan dan dicatat.</li>
+            <li>Catatan serah terima telah diarsipkan oleh tim IT.</li>
+          </ol>
+
+          <p className="mb-8">
+            Dokumen ini dibuat sebagai arsip resmi dan tidak dapat diubah setelah
+            ditandatangani.
+          </p>
+
+          <p className="mb-10">
+            Diterima oleh: <strong>{playerName}</strong>
+          </p>
+
+          <div className="mb-3 text-xs text-neutral-600">Tanda tangan penerima</div>
+          <div className="flex h-20 items-end border-b border-black px-2 pb-1">
+            {signed ? (
+              <span className="font-serif text-2xl italic">{playerName}</span>
+            ) : null}
+          </div>
+          <p className="mt-1 text-xs text-neutral-600">{playerName}</p>
+        </div>
+
+        <div className="flex h-14 shrink-0 items-center justify-end border-t border-neutral-300 bg-neutral-100 px-6">
+          {signed ? (
+            <span className="flex items-center gap-2 text-sm font-semibold text-emerald-700">
+              <Check size={16} strokeWidth={2.5} />
+              Ditandatangani
+            </span>
+          ) : (
+            <button
+              type="button"
+              onClick={onSign}
+              className="h-9 rounded bg-neutral-900 px-5 text-sm font-semibold text-white transition-colors hover:bg-neutral-700"
+            >
+              Tanda Tangan
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function MailApp() {
   const mailData = useGameStore((s) => s.mailData);
   const setMailData = useGameStore((s) => s.setMailData);
   const playerName = useGameStore((s) => s.playerName);
+  const signedOffboarding = useGameStore((s) => s.flags.act1.signedOffboarding);
+  const setFlag = useGameStore((s) => s.setFlag);
   const [activeFolder, setActiveFolder] = useState<FolderId>('inbox');
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [readIds, setReadIds] = useState<ReadonlySet<string>>(new Set());
+  const [pdfOpen, setPdfOpen] = useState<boolean>(false);
 
   useEffect(() => {
     if (mailData) return;
@@ -56,15 +152,22 @@ export function MailApp() {
   const handleSelectFolder = (id: FolderId) => {
     setActiveFolder(id);
     setSelectedId(null);
+    setPdfOpen(false);
   };
 
   const handleSelectMail = (id: string) => {
     setSelectedId(id);
+    setPdfOpen(false);
     setReadIds((prev) => new Set(prev).add(id));
   };
 
+  const handleSign = () => {
+    setFlag('act1.signedOffboarding', true);
+    setPdfOpen(false);
+  };
+
   return (
-    <div className="flex h-full w-full bg-[var(--os-bg)] text-neutral-100">
+    <div className="relative flex h-full w-full bg-[var(--os-bg)] text-neutral-100">
       <aside className="flex w-[180px] shrink-0 flex-col border-r border-[var(--os-border)] bg-[var(--os-panel)] py-2">
         {FOLDERS.map(({ id, label, icon: Icon }) => (
           <button
@@ -164,23 +267,43 @@ export function MailApp() {
             </div>
             {attachments.length > 0 ? (
               <footer className="flex shrink-0 flex-wrap items-center gap-2 border-t border-[var(--os-border)] bg-[var(--os-panel)] px-5 py-3">
-                {attachments.map((att) => (
-                  <button
-                    key={att.id}
-                    type="button"
-                    title={att.fileName}
-                    className="flex items-center gap-2 rounded-md border border-[var(--os-border)] bg-[var(--os-bg)] px-3 py-1.5 text-xs text-neutral-200 transition-colors hover:bg-white/10"
-                  >
-                    <Paperclip size={14} strokeWidth={1.75} />
-                    <span>Lampiran</span>
-                    <span className="text-neutral-500">{att.fileName}</span>
-                  </button>
-                ))}
+                {attachments.map((att) => {
+                  const isOffboarding = att.fileName === OFFBOARDING_PDF;
+                  const isSigned = isOffboarding && signedOffboarding;
+                  return (
+                    <button
+                      key={att.id}
+                      type="button"
+                      title={att.fileName}
+                      onClick={isOffboarding ? () => setPdfOpen(true) : undefined}
+                      className="flex items-center gap-2 rounded-md border border-[var(--os-border)] bg-[var(--os-bg)] px-3 py-1.5 text-xs text-neutral-200 transition-colors hover:bg-white/10"
+                    >
+                      <Paperclip size={14} strokeWidth={1.75} />
+                      <span>Lampiran</span>
+                      <span className="text-neutral-500">{att.fileName}</span>
+                      {isSigned ? (
+                        <span className="flex items-center gap-1 font-semibold text-emerald-500">
+                          <Check size={12} strokeWidth={2.5} />
+                          Ditandatangani
+                        </span>
+                      ) : null}
+                    </button>
+                  );
+                })}
               </footer>
             ) : null}
           </>
         )}
       </section>
+
+      {pdfOpen ? (
+        <OffboardingPdf
+          playerName={playerName}
+          signed={signedOffboarding}
+          onSign={handleSign}
+          onClose={() => setPdfOpen(false)}
+        />
+      ) : null}
     </div>
   );
 }

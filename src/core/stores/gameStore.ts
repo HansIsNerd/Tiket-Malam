@@ -8,6 +8,7 @@ import type { TicketData } from '@core/types/tickets';
 export interface Act1Flags {
   ticket4471CloseClicked: boolean;
   ticket4471ReplyAttempted: boolean;
+  janganBukaReadEnough: boolean;
 }
 
 export interface Flags {
@@ -49,6 +50,7 @@ export const useGameStore = create<GameState>((set) => ({
     act1: {
       ticket4471CloseClicked: false,
       ticket4471ReplyAttempted: false,
+      janganBukaReadEnough: false,
     },
   },
 

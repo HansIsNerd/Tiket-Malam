@@ -1,8 +1,22 @@
 import { motion } from 'framer-motion';
+import { Battery, Volume2, Wifi } from 'lucide-react';
 import { useGameStore } from '@core/stores/gameStore';
 import { useUiStore } from '@core/stores/uiStore';
 import { cx } from '@core/utils/cx';
 import { getAppMeta } from '@windows/appRegistry';
+
+const FAKE_DATE = '02/11/2025';
+
+function WindowsLogo() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true" className="fill-sky-400">
+      <rect x="0" y="0" width="8.5" height="8.5" />
+      <rect x="9.5" y="0" width="8.5" height="8.5" />
+      <rect x="0" y="9.5" width="8.5" height="8.5" />
+      <rect x="9.5" y="9.5" width="8.5" height="8.5" />
+    </svg>
+  );
+}
 
 export function Taskbar() {
   const timeCurrent = useGameStore((s) => s.timeCurrent);
@@ -15,9 +29,10 @@ export function Taskbar() {
       <div className="flex items-center justify-start">
         <button
           type="button"
-          className="h-9 rounded-md px-4 text-sm font-semibold text-neutral-100 transition-colors hover:bg-white/10"
+          aria-label="Start"
+          className="flex h-9 w-9 items-center justify-center rounded-md transition-colors hover:bg-white/10"
         >
-          Start
+          <WindowsLogo />
         </button>
       </div>
 
@@ -56,10 +71,16 @@ export function Taskbar() {
           })}
       </div>
 
-      <div className="flex items-center justify-end">
-        <span className="px-3 text-sm tabular-nums text-neutral-300">
-          {timeCurrent}
-        </span>
+      <div className="flex items-center justify-end gap-1">
+        <div className="flex h-9 items-center gap-2 rounded-md px-2 text-neutral-300 transition-colors hover:bg-white/10">
+          <Wifi size={14} strokeWidth={1.75} />
+          <Volume2 size={14} strokeWidth={1.75} />
+          <Battery size={14} strokeWidth={1.75} />
+        </div>
+        <div className="flex h-9 flex-col items-end justify-center rounded-md px-2 leading-tight text-neutral-200 transition-colors hover:bg-white/10">
+          <span className="text-xs tabular-nums">{timeCurrent}</span>
+          <span className="text-[10px] tabular-nums text-neutral-400">{FAKE_DATE}</span>
+        </div>
       </div>
     </footer>
   );
