@@ -29,10 +29,10 @@ export function WindowsDesktopScene() {
   return (
     <div className="relative h-full w-full overflow-hidden bg-slate-900 text-neutral-100">
       <Desktop />
-      {windows.map((win) => (
-        <WindowFrame key={win.id} window={win} />
-      ))}
+      {windows.map((w) =>
+        w.isMinimized === true ? null : <WindowFrame key={w.id} window={w} />,
+      )}
       <Taskbar />
     </div>
   );
-} 
+}

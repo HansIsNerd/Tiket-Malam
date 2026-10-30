@@ -10,19 +10,26 @@ const DEFAULT_SIZE = { width: 480, height: 320 };
 const CASCADE_BASE = 80;
 const CASCADE_STEP = 30;
 
+export type TrayMenu = 'quick_settings' | 'calendar' | null;
+
 interface UiState {
   scene: Scene;
   windows: WindowInstance[];
   focusedWindowId: string | null;
   nextZIndex: number;
+  activeTrayMenu: TrayMenu;
+  isStartMenuOpen: boolean;
   setScene: (scene: Scene) => void;
   openWindow: (input: OpenWindowInput) => void;
   closeWindow: (id: string) => void;
   focusWindow: (id: string) => void;
   moveWindow: (id: string, position: Position) => void;
   minimizeWindow: (id: string) => void;
+  restoreWindow: (id: string) => void;
   toggleMaximizeWindow: (id: string) => void;
   hideWindow: (id: string) => void;
+  setTrayMenu: (menu: TrayMenu) => void;
+  toggleStartMenu: () => void;
 }
 
 function pickTopId(windows: WindowInstance[], excludeId: string): string | null {
@@ -41,6 +48,8 @@ export const useUiStore = create<UiState>((set, get) => ({
   windows: [],
   focusedWindowId: null,
   nextZIndex: 1,
+  activeTrayMenu: null,
+  isStartMenuOpen: false,
 
   setScene: (scene) => set({ scene }),
 
@@ -72,6 +81,8 @@ export const useUiStore = create<UiState>((set, get) => ({
         ],
         focusedWindowId: created.id,
         nextZIndex: state.nextZIndex + 1,
+        isStartMenuOpen: false,
+        activeTrayMenu: null,
       };
     });
   },
@@ -113,14 +124,21 @@ export const useUiStore = create<UiState>((set, get) => ({
     })),
 
   minimizeWindow: (id) =>
-    set((state) => {
-      const next = state.windows.map((w) =>
+    set((state) => ({
+      windows: state.windows.map((w) =>
         w.id === id ? { ...w, isMinimized: true, isFocused: false } : w,
-      );
-      if (state.focusedWindowId !== id) return { windows: next };
-      const topId = pickTopId(next, id);
-      return { windows: withFocus(next, topId), focusedWindowId: topId };
-    }),
+      ),
+      focusedWindowId: null,
+    })),
+
+  restoreWindow: (id) => {
+    set((state) => ({
+      windows: state.windows.map((w) =>
+        w.id === id ? { ...w, isMinimized: false } : w,
+      ),
+    }));
+    get().focusWindow(id);
+  },
 
   toggleMaximizeWindow: (id) =>
     set((state) => ({
@@ -138,4 +156,16 @@ export const useUiStore = create<UiState>((set, get) => ({
       const topId = pickTopId(next, id);
       return { windows: withFocus(next, topId), focusedWindowId: topId };
     }),
+
+  setTrayMenu: (menu) =>
+    set((state) => ({
+      activeTrayMenu: state.activeTrayMenu === menu ? null : menu,
+      isStartMenuOpen: false,
+    })),
+
+  toggleStartMenu: () =>
+    set((state) => ({
+      isStartMenuOpen: !state.isStartMenuOpen,
+      activeTrayMenu: null,
+    })),
 }));
