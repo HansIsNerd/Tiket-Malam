@@ -1,0 +1,25 @@
+{
+  "contacts": [
+    { "id": "pak_darto", "displayName": "Pak Darto", "status": "online" },
+    { "id": "bagas_p", "displayName": "bagas.p", "status": "offline" }
+  ],
+  "threads": [
+    {
+      "id": "chat_darto_1",
+      "contactId": "pak_darto",
+      "messages": [
+        { "time": "22:49", "from": "pak_darto", "text": "Sendirian, Mas?" },
+        { "time": "22:50", "from": "player", "text": "Iya Pak. Shift terakhir." }
+      ]
+    },
+    {
+      "id": "chat_bagas_1",
+      "contactId": "bagas_p",
+      "messages": [
+        { "time": "23:18", "from": "bagas_p", "text": "Kamu buka log 03:00." }
+      ],
+      "inputDisabled": true,
+      "inputDisabledReason": "Tidak dapat membalas"
+    }
+  ]
+}

@@ -2,6 +2,12 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --os-bg: #1e1e22;
+  --os-panel: #26262b;
+  --os-border: #3a3a41;
+}
+
 html,
 body,
 #root {

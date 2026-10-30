@@ -1,12 +1,14 @@
 import { useRef } from 'react';
 import type { CSSProperties, PointerEvent } from 'react';
 import { motion } from 'framer-motion';
-import { Copy, EyeOff, Minus, Square, X } from 'lucide-react';
 import { useUiStore } from '@core/stores/uiStore';
 import type { Position, WindowInstance } from '@core/types';
 import { cx } from '@core/utils/cx';
 import { DummyApp } from '@windows/apps/DummyApp';
+import { ChatApp } from '@windows/apps/ChatApp';
 import { getAppMeta } from '@windows/appRegistry';
+import { Copy, Minus, Square, X } from 'lucide-react';
+
 
 interface WindowFrameProps {
   window: WindowInstance;
@@ -22,6 +24,8 @@ const CONTROL_BTN = 'flex h-8 w-11 items-center justify-center transition-colors
 
 function renderApp(appId: string) {
   switch (appId) {
+    case 'chat':
+      return <ChatApp />;
     case 'dummy':
     default:
       return <DummyApp />;

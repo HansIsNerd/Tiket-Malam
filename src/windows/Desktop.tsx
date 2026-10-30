@@ -11,7 +11,13 @@ export function Desktop() {
         <motion.button
           key={appId}
           type="button"
-          onClick={() => openWindow({ appId, title })}
+          onClick={() =>
+            openWindow({
+              appId,
+              title,
+              size: appId === 'chat' ? { width: 720, height: 460 } : undefined,
+            })
+          } 
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.97 }}
           transition={{ type: 'spring', stiffness: 400, damping: 25 }}
