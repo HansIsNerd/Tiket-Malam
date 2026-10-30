@@ -5,8 +5,6 @@ import {
   Bluetooth,
   Moon,
   Plane,
-  Power,
-  Search,
   Sun,
   Volume2,
   Wifi,
@@ -16,6 +14,7 @@ import { useGameStore } from '@core/stores/gameStore';
 import { useUiStore } from '@core/stores/uiStore';
 import { cx } from '@core/utils/cx';
 import { getAppMeta } from '@windows/appRegistry';
+import { StartMenu } from '@windows/StartMenu';
 
 const FAKE_TODAY = new Date(2025, 10, 2);
 const FAKE_DATE = '02/11/2025';
@@ -186,40 +185,6 @@ function CalendarPopup() {
   );
 }
 
-function StartMenuPanel() {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 24 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: 24 }}
-      transition={{ type: 'spring', stiffness: 380, damping: 32 }}
-      className="absolute bottom-14 left-2 z-[9995] flex h-[350px] w-[450px] flex-col rounded-xl border border-white/10 bg-[#1A1A1D]/95 p-6 shadow-2xl backdrop-blur-xl"
-    >
-      <div className="flex h-10 items-center gap-3 rounded-full border border-white/10 bg-white/5 px-4 text-neutral-400">
-        <Search size={16} strokeWidth={1.75} className="shrink-0" />
-        <input
-          type="text"
-          readOnly
-          placeholder="Ketik di sini untuk mencari"
-          aria-label="Cari"
-          className="min-w-0 flex-1 bg-transparent text-sm text-neutral-200 outline-none placeholder:text-neutral-500"
-        />
-      </div>
-
-      <div className="mt-auto flex justify-end">
-        <button
-          type="button"
-          onClick={() => console.log('Log Out Triggered')}
-          className="flex h-9 items-center gap-2 rounded-md px-3 text-xs text-neutral-200 transition-colors hover:bg-white/10"
-        >
-          <Power size={16} strokeWidth={1.75} />
-          <span>Keluar (Shut Down)</span>
-        </button>
-      </div>
-    </motion.div>
-  );
-}
-
 export function Taskbar() {
   const timeCurrent = useGameStore((s) => s.timeCurrent);
   const windows = useUiStore((s) => s.windows);
@@ -244,13 +209,8 @@ export function Taskbar() {
 
   return (
     <>
-      {isStartMenuOpen ? (
-        <div
-          aria-hidden="true"
-          onClick={toggleStartMenu}
-          className="fixed inset-0 z-[9990]"
-        />
-      ) : null}
+      <StartMenu />
+
       {activeTrayMenu !== null ? (
         <div
           aria-hidden="true"
@@ -259,7 +219,6 @@ export function Taskbar() {
         />
       ) : null}
 
-      <AnimatePresence>{isStartMenuOpen ? <StartMenuPanel key="start" /> : null}</AnimatePresence>
       <AnimatePresence mode="wait">
         {activeTrayMenu === 'quick_settings' ? <QuickSettingsPopup key="qs" /> : null}
         {activeTrayMenu === 'calendar' ? <CalendarPopup key="cal" /> : null}

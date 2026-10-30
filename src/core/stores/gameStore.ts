@@ -13,6 +13,7 @@ export interface Act1Flags {
   signedOffboarding: boolean;
   janganBukaRead: boolean;
   janganBukaReadEnough: boolean;
+  playerTriedToQuit: boolean;
 }
 
 export interface Act2Flags {
@@ -75,6 +76,7 @@ export const useGameStore = create<GameState>((set) => ({
       signedOffboarding: false,
       janganBukaRead: false,
       janganBukaReadEnough: false,
+      playerTriedToQuit: false,
     },
     act2: {
       e02ScrollCount: 0,
