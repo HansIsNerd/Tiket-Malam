@@ -1,0 +1,31 @@
+{
+  "mails": [
+    {
+      "id": "mail_sari_offboarding",
+      "from": "Sari Wulandari (HR)",
+      "subject": "Pengingat — Berita Acara Offboarding",
+      "time": "21:30",
+      "body": "Selamat malam {PLAYER},\n\nMohon simpan salinan berita acara offboarding Bagas Prasetyo untuk arsip IT. Dokumen terlampir dan sudah ditandatangani.\n\nTerima kasih.\n\nSari Wulandari\nHR",
+      "unread": true,
+      "attachments": [
+        { "id": "att_berita_acara_bagas", "fileName": "berita_acara_bagas.pdf" }
+      ]
+    },
+    {
+      "id": "mail_rani_jadwal",
+      "from": "Rani",
+      "subject": "Re: Jadwal shift besok",
+      "time": "20:10",
+      "body": "Besok kamu cuti, kan? Pastikan semua tiket malam ini sudah ditutup sebelum pulang.\n\nRani",
+      "unread": true
+    },
+    {
+      "id": "mail_darto_laporan",
+      "from": "Darto",
+      "subject": "Laporan security malam ini",
+      "time": "22:30",
+      "body": "Patroli jam 22.00 aman. Lift lantai 4 tidak dipakai. Saya di pos depan kalau perlu apa-apa.\n\nDarto",
+      "unread": true
+    }
+  ]
+}

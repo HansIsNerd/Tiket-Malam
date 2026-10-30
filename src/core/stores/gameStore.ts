@@ -1,6 +1,8 @@
 import { create } from 'zustand';
 import { useUiStore } from '@core/stores/uiStore';
 import type { ChatData } from '@core/types/chat';
+import type { MailData } from '@core/types/mail';
+import type { FileData } from '@core/types/files';
 import type { TicketData } from '@core/types/tickets';
 
 export interface Act1Flags {
@@ -18,12 +20,16 @@ interface GameState {
   timeCurrent: string;
   chatData: ChatData | null;
   ticketData: TicketData | null;
+  mailData: MailData | null;
+  fileData: FileData | null;
   flags: Flags;
   setPlayerName: (name: string) => void;
   setAct: (act: number) => void;
   setTime: (time: string) => void;
   setChatData: (data: ChatData) => void;
   setTicketData: (data: TicketData) => void;
+  setMailData: (data: MailData) => void;
+  setFileData: (data: FileData) => void;
   setFlag: <K extends keyof Act1Flags>(
     path: `act1.${K}`,
     value: Act1Flags[K],
@@ -37,6 +43,8 @@ export const useGameStore = create<GameState>((set) => ({
   timeCurrent: '22:47',
   chatData: null,
   ticketData: null,
+  mailData: null,
+  fileData: null,
   flags: {
     act1: {
       ticket4471CloseClicked: false,
@@ -53,6 +61,10 @@ export const useGameStore = create<GameState>((set) => ({
   setChatData: (data) => set({ chatData: data }),
 
   setTicketData: (data) => set({ ticketData: data }),
+
+  setMailData: (data) => set({ mailData: data }),
+
+  setFileData: (data) => set({ fileData: data }),
 
   setFlag: (path, value) =>
     set((state) => {

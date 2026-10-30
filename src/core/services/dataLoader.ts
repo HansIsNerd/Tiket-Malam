@@ -4,12 +4,26 @@ import type { ChatData } from '@core/types/chat';
 import { TicketDataSchema } from '@core/types/tickets';
 import type { TicketData } from '@core/types/tickets';
 
+import { MailDataSchema } from '@core/types/mail';
+import type { MailData } from '@core/types/mail';
+import { FileDataSchema } from '@core/types/files';
+import type { FileData } from '@core/types/files';
 const CHAT_DATA_URL = '/data/chat.json';
 const TICKET_DATA_URL = '/data/tickets.json';
+const MAIL_DATA_URL = '/data/mail.json';
+const FILE_DATA_URL = '/data/files.json';
 
+export function loadMailData(): Promise<MailData> {
+  return loadValidated(MAIL_DATA_URL, MailDataSchema);
+}
+export function loadFileData(): Promise<FileData> {
+  return loadValidated(FILE_DATA_URL, FileDataSchema);
+}
 export interface GameData {
   chatData: ChatData;
   ticketData: TicketData;
+  mailData: MailData;
+  fileData: FileData;
 }
 
 async function fetchJson(url: string): Promise<unknown> {
@@ -46,9 +60,11 @@ export function loadTicketData(): Promise<TicketData> {
 }
 
 export async function loadAllData(): Promise<GameData> {
-  const [chatData, ticketData] = await Promise.all([
+  const [chatData, ticketData, mailData, fileData] = await Promise.all([
     loadChatData(),
     loadTicketData(),
+    loadMailData(),
+    loadFileData(),
   ]);
-  return { chatData, ticketData };
+  return { chatData, ticketData, mailData, fileData };
 }

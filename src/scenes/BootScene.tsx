@@ -11,6 +11,8 @@ export function BootScene() {
   const completeBoot = useGameStore((s) => s.completeBoot);
   const setChatData = useGameStore((s) => s.setChatData);
   const setTicketData = useGameStore((s) => s.setTicketData);
+  const setMailData = useGameStore((s) => s.setMailData);
+  const setFileData = useGameStore((s) => s.setFileData);
 
   const [name, setName] = useState<string>(defaultName);
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -19,10 +21,12 @@ export function BootScene() {
   useEffect(() => {
     let cancelled = false;
     loadAllData()
-      .then(({ chatData, ticketData }) => {
+      .then(({ chatData, ticketData, mailData, fileData }) => {
         if (cancelled) return;
         setChatData(chatData);
         setTicketData(ticketData);
+        setMailData(mailData);
+        setFileData(fileData);
       })
       .catch((err: unknown) => {
         console.warn(err);
@@ -31,7 +35,7 @@ export function BootScene() {
       cancelled = true;
       if (timerRef.current !== null) window.clearTimeout(timerRef.current);
     };
-  }, [setChatData, setTicketData]);
+  }, [setChatData, setTicketData, setMailData, setFileData]);
 
   const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();

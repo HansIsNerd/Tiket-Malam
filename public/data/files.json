@@ -1,0 +1,22 @@
+{
+  "files": [
+    {
+      "id": "file_catatan_shift",
+      "name": "catatan_shift.txt",
+      "type": "text",
+      "content": "Shift malam 22:00 - 06:00.\nCek antrean tiket tiap 30 menit.\nTutup semua tiket sebelum pulang."
+    },
+    {
+      "id": "file_handover_darto",
+      "name": "handover_darto.txt",
+      "type": "text",
+      "content": "Lantai 4 jangan diurus."
+    },
+    {
+      "id": "file_jangan_buka",
+      "name": "jangan_buka.txt",
+      "type": "text",
+      "content": "kamu telat 11 bulan."
+    }
+  ]
+}

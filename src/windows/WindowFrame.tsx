@@ -10,6 +10,7 @@ import { getAppMeta } from '@windows/appRegistry';
 import { DummyApp } from '@windows/apps/DummyApp';
 import { ChatApp } from '@windows/apps/ChatApp';
 import { TicketApp } from '@windows/apps/TicketApp';
+import { MailApp } from '@windows/apps/MailApp';
 
 
 interface WindowFrameProps {
@@ -33,6 +34,8 @@ function renderApp(appId: string) {
     case 'dummy':
     default:
       return <DummyApp />;
+    case 'mail':
+      return <MailApp />;
   }
 }
 
