@@ -14,6 +14,7 @@ import { MailApp } from '@windows/apps/MailApp';
 import { FileExplorerApp } from '@windows/apps/FileExplorerApp';
 import { DirectoryApp } from '@windows/apps/DirectoryApp';
 import { RemoteApp } from '@windows/apps/RemoteApp';
+import { LogApp } from '@windows/apps/LogApp';
 
 interface WindowFrameProps {
   window: WindowInstance;
@@ -41,6 +42,8 @@ function renderApp(appId: string) {
       return <DirectoryApp />;
     case 'remote':
       return <RemoteApp />;
+    case 'log':
+      return <LogApp />;
     case 'dummy':
     default:
       return <DummyApp />;

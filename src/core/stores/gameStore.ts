@@ -5,6 +5,7 @@ import type { MailData } from '@core/types/mail';
 import type { FileData } from '@core/types/files';
 import type { TicketData } from '@core/types/tickets';
 import type { DirectoryData } from '@core/types/directory';
+
 export interface Act1Flags {
   ticket4471CloseClicked: boolean;
   ticket4471ReplyAttempted: boolean;
@@ -13,9 +14,28 @@ export interface Act1Flags {
   janganBukaRead: boolean;
   janganBukaReadEnough: boolean;
 }
+
+export interface Act2Flags {
+  e02ScrollCount: number;
+}
+
 export interface Flags {
   act1: Act1Flags;
+  act2: Act2Flags;
 }
+
+export type FlagPath = {
+  [S in keyof Flags]: `${S}.${Extract<keyof Flags[S], string>}`;
+}[keyof Flags];
+
+export type FlagValue<P extends FlagPath> = P extends `${infer S}.${infer K}`
+  ? S extends keyof Flags
+    ? K extends keyof Flags[S]
+      ? Flags[S][K]
+      : never
+    : never
+  : never;
+
 interface GameState {
   playerName: string;
   act: number;
@@ -34,10 +54,7 @@ interface GameState {
   setMailData: (data: MailData) => void;
   setFileData: (data: FileData) => void;
   setDirectoryData: (data: DirectoryData) => void;
-  setFlag: <K extends keyof Act1Flags>(
-    path: `act1.${K}`,
-    value: Act1Flags[K],
-  ) => void;
+  setFlag: <P extends FlagPath>(path: P, value: FlagValue<P>) => void;
   completeBoot: (name?: string) => void;
 }
 
@@ -59,6 +76,9 @@ export const useGameStore = create<GameState>((set) => ({
       janganBukaRead: false,
       janganBukaReadEnough: false,
     },
+    act2: {
+      e02ScrollCount: 0,
+    },
   },
 
   setPlayerName: (name) => set({ playerName: name }),
@@ -71,12 +91,12 @@ export const useGameStore = create<GameState>((set) => ({
   setDirectoryData: (data) => set({ directoryData: data }),
   setFlag: (path, value) =>
     set((state) => {
-      const key = path.slice('act1.'.length) as keyof Act1Flags;
+      const [section, key] = path.split('.') as [keyof Flags, string];
       return {
         flags: {
           ...state.flags,
-          act1: { ...state.flags.act1, [key]: value },
-        },
+          [section]: { ...state.flags[section], [key]: value },
+        } as Flags,
       };
     }),
 

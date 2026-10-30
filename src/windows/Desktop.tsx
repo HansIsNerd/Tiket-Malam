@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { FileText, X } from 'lucide-react';
+import { useGameStore } from '@core/stores/gameStore';
 import { useUiStore } from '@core/stores/uiStore';
 import type { FileItem } from '@core/types/files';
 import { APPS } from '@windows/appRegistry';
@@ -14,11 +15,21 @@ const WINDOW_SIZES: Record<string, { width: number; height: number }> = {
   mail: { width: 1000, height: 500 },
   directory: { width: 820, height: 480 },
   remote: { width: 860, height: 520 },
+  log: { width: 760, height: 440 },
+};
+
+// Ubah ke 2 saat Log hanya boleh muncul di Babak 2.
+const LOG_VISIBLE_FROM_ACT = 1;
+const ACT_GATED_APPS: Record<string, number> = {
+  log: LOG_VISIBLE_FROM_ACT,
 };
 
 export function Desktop() {
   const openWindow = useUiStore((s) => s.openWindow);
+  const act = useGameStore((s) => s.act);
   const [openFile, setOpenFile] = useState<FileItem | null>(null);
+
+  const visibleApps = APPS.filter((app) => act >= (ACT_GATED_APPS[app.appId] ?? 1));
 
   return (
     <div
@@ -28,7 +39,7 @@ export function Desktop() {
       <div className="absolute inset-0 bg-black/50" />
 
       <div className="relative grid h-full grid-flow-col grid-rows-[repeat(auto-fill,6rem)] content-start justify-start gap-1 p-3">
-        {APPS.map(({ appId, title, icon: Icon, tileClass }) => (
+        {visibleApps.map(({ appId, title, icon: Icon, tileClass }) => (
           <motion.button
             key={appId}
             type="button"
