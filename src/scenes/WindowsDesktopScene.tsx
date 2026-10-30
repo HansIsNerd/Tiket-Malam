@@ -27,7 +27,7 @@ export function WindowsDesktopScene() {
   }, [fileData, setFileData]);
 
   return (
-    <div className="relative h-screen w-screen overflow-hidden bg-slate-900 text-neutral-100">
+    <div className="relative h-full w-full overflow-hidden bg-slate-900 text-neutral-100">
       <Desktop />
       {windows.map((win) => (
         <WindowFrame key={win.id} window={win} />
@@ -35,4 +35,4 @@ export function WindowsDesktopScene() {
       <Taskbar />
     </div>
   );
-}
+} 

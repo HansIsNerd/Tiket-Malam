@@ -1,18 +1,41 @@
+import { AnimatePresence, motion } from 'framer-motion';
 import { useUiStore } from '@core/stores/uiStore';
 import { BootScene } from '@scenes/BootScene';
 import { WindowsDesktopScene } from '@scenes/WindowsDesktopScene';
 
-export default function App() {
-  const scene = useUiStore((s) => s.scene);
+const SCENE_TRANSITION = { duration: 0.5, ease: 'easeInOut' } as const;
 
+function renderScene(scene: string) {
   switch (scene) {
     case 'boot':
       return <BootScene />;
     case 'windows':
       return <WindowsDesktopScene />;
-    case 'macos':
-    case 'ending':
-    case 'menu':
+    default:
       return null;
   }
+}
+
+export default function App() {
+  const scene = useUiStore((s) => s.scene);
+  const content = renderScene(scene);
+
+  return (
+    <div className="h-screen w-screen overflow-hidden bg-black">
+      <AnimatePresence mode="wait" initial={false}>
+        {content ? (
+          <motion.div
+            key={scene}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={SCENE_TRANSITION}
+            className="h-full w-full"
+          >
+            {content}
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
+    </div>
+  );
 }

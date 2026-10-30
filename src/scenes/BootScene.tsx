@@ -22,18 +22,18 @@ export function BootScene() {
 
   const [password, setPassword] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [isShutdown, setIsShutdown] = useState<boolean>(false);
   const timerRef = useRef<number | null>(null);
 
   useEffect(() => {
     let cancelled = false;
     loadAllData()
-      .then(({ chatData, ticketData, mailData, fileData }) => {
+      .then(({ chatData, ticketData, mailData, fileData, directoryData }) => {
         if (cancelled) return;
         setChatData(chatData);
         setTicketData(ticketData);
         setMailData(mailData);
         setFileData(fileData);
+        setDirectoryData(directoryData);
       })
       .catch((err: unknown) => {
         console.warn(err);
@@ -42,10 +42,10 @@ export function BootScene() {
       cancelled = true;
       if (timerRef.current !== null) window.clearTimeout(timerRef.current);
     };
-  }, [setChatData, setTicketData, setMailData, setFileData]);
+  }, [setChatData, setTicketData, setMailData, setFileData, setDirectoryData]);
 
   const startLogin = () => {
-    if (isLoading || isShutdown) return;
+    if (isLoading) return;
     setIsLoading(true);
     timerRef.current = window.setTimeout(() => {
       completeBoot();
@@ -61,28 +61,20 @@ export function BootScene() {
 
   return (
     <main
-      className="relative h-screen w-screen overflow-hidden bg-cover bg-center text-white"
+      className="relative h-full w-full overflow-hidden bg-cover bg-center text-white"
       style={{ backgroundImage: `url(${WALLPAPER_URL})` }}
     >
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
 
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: isShutdown ? 0 : 1 }}
-        transition={{ duration: 0.6 }}
-        className="absolute inset-0"
-      >
+      <div className="absolute inset-0">
         <span className="absolute left-4 top-4 select-none text-xs text-white/70">
           Shift Malam — {timeCurrent}
         </span>
 
         <div className="absolute left-1/2 top-1/2 flex w-80 -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-4">
-          <motion.div
-            layout
-            className="flex h-24 w-24 items-center justify-center rounded-full bg-neutral-500 text-5xl font-light text-white shadow-lg shadow-black/40"
-          >
+          <div className="flex h-24 w-24 items-center justify-center rounded-full bg-neutral-500 text-5xl font-light text-white shadow-lg shadow-black/40">
             {initial}
-          </motion.div>
+          </div>
 
           <h1 className="text-2xl font-light">{playerName}</h1>
 
@@ -160,13 +152,12 @@ export function BootScene() {
           <button
             type="button"
             aria-label="Daya"
-            onClick={() => setIsShutdown(false)}
             className="flex h-9 w-9 items-center justify-center rounded-md transition-colors hover:bg-white/10"
           >
             <Power size={18} strokeWidth={1.75} />
           </button>
         </div>
-      </motion.div>
+      </div>
     </main>
   );
 }
