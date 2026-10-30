@@ -3,7 +3,8 @@ import { useUiStore } from '@core/stores/uiStore';
 import { APPS } from '@windows/appRegistry';
 
 const WINDOW_SIZES: Record<string, { width: number; height: number }> = {
-  chat: { width: 900, height: 600 },
+  chat: { width: 900, height: 500 },
+  ticket: { width: 800, height: 500 },
 };
 
 export function Desktop() {

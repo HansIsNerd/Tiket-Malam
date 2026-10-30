@@ -4,10 +4,12 @@ import { motion } from 'framer-motion';
 import { useUiStore } from '@core/stores/uiStore';
 import type { Position, WindowInstance } from '@core/types';
 import { cx } from '@core/utils/cx';
+import { Copy, Minus, Square, X } from 'lucide-react';
+import { getAppMeta } from '@windows/appRegistry';
+
 import { DummyApp } from '@windows/apps/DummyApp';
 import { ChatApp } from '@windows/apps/ChatApp';
-import { getAppMeta } from '@windows/appRegistry';
-import { Copy, Minus, Square, X } from 'lucide-react';
+import { TicketApp } from '@windows/apps/TicketApp';
 
 
 interface WindowFrameProps {
@@ -26,6 +28,8 @@ function renderApp(appId: string) {
   switch (appId) {
     case 'chat':
       return <ChatApp />;
+    case 'ticket':
+      return <TicketApp />;
     case 'dummy':
     default:
       return <DummyApp />;

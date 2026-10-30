@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import { useGameStore } from '@core/stores/gameStore';
 import { loadChatData } from '@core/services/dataLoader';
+import { loadAllData } from '@core/services/dataLoader';
 
 const FAKE_LOADING_MS = 2000;
 
@@ -9,6 +10,7 @@ export function BootScene() {
   const defaultName = useGameStore((s) => s.playerName);
   const completeBoot = useGameStore((s) => s.completeBoot);
   const setChatData = useGameStore((s) => s.setChatData);
+  const setTicketData = useGameStore((s) => s.setTicketData);
 
   const [name, setName] = useState<string>(defaultName);
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -16,9 +18,11 @@ export function BootScene() {
 
   useEffect(() => {
     let cancelled = false;
-    loadChatData()
-      .then((data) => {
-        if (!cancelled) setChatData(data);
+    loadAllData()
+      .then(({ chatData, ticketData }) => {
+        if (cancelled) return;
+        setChatData(chatData);
+        setTicketData(ticketData);
       })
       .catch((err: unknown) => {
         console.warn(err);
@@ -27,7 +31,7 @@ export function BootScene() {
       cancelled = true;
       if (timerRef.current !== null) window.clearTimeout(timerRef.current);
     };
-  }, [setChatData]);
+  }, [setChatData, setTicketData]);
 
   const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();

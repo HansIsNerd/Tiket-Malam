@@ -1,7 +1,16 @@
+import type { ZodType } from 'zod';
 import { ChatDataSchema } from '@core/types/chat';
 import type { ChatData } from '@core/types/chat';
+import { TicketDataSchema } from '@core/types/tickets';
+import type { TicketData } from '@core/types/tickets';
 
 const CHAT_DATA_URL = '/data/chat.json';
+const TICKET_DATA_URL = '/data/tickets.json';
+
+export interface GameData {
+  chatData: ChatData;
+  ticketData: TicketData;
+}
 
 async function fetchJson(url: string): Promise<unknown> {
   const response = await fetch(url);
@@ -11,19 +20,35 @@ async function fetchJson(url: string): Promise<unknown> {
   return response.json();
 }
 
-export async function loadChatData(): Promise<ChatData> {
-  const raw = await fetchJson(CHAT_DATA_URL);
-  const result = ChatDataSchema.safeParse(raw);
+async function loadValidated<T>(url: string, schema: ZodType<T>): Promise<T> {
+  const raw = await fetchJson(url);
+  const result = schema.safeParse(raw);
 
   if (!result.success) {
     if (import.meta.env.DEV) {
       const details = result.error.issues
         .map((issue) => `${issue.path.join('.') || '(root)'}: ${issue.message}`)
         .join('\n');
-      throw new Error(`Validasi ${CHAT_DATA_URL} gagal:\n${details}`);
+      throw new Error(`Validasi ${url} gagal:\n${details}`);
     }
     throw new Error('Data permainan tidak valid');
   }
 
   return result.data;
+}
+
+export function loadChatData(): Promise<ChatData> {
+  return loadValidated(CHAT_DATA_URL, ChatDataSchema);
+}
+
+export function loadTicketData(): Promise<TicketData> {
+  return loadValidated(TICKET_DATA_URL, TicketDataSchema);
+}
+
+export async function loadAllData(): Promise<GameData> {
+  const [chatData, ticketData] = await Promise.all([
+    loadChatData(),
+    loadTicketData(),
+  ]);
+  return { chatData, ticketData };
 }

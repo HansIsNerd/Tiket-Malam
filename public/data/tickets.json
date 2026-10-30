@@ -1,0 +1,56 @@
+{
+  "tickets": [
+    {
+      "id": "ticket_4468",
+      "number": 4468,
+      "title": "VPN tidak connect",
+      "status": "closed",
+      "from": "Divisi Finance",
+      "createdAt": "19:12",
+      "priority": "medium",
+      "description": "VPN tidak bisa connect dari rumah. Muncul pesan timeout.",
+      "closedBy": "player",
+      "closedAt": "19:40",
+      "resolution": "Profil VPN dibuat ulang. Koneksi normal."
+    },
+    {
+      "id": "ticket_4469",
+      "number": 4469,
+      "title": "Proyektor ruang meeting 2",
+      "status": "closed",
+      "from": "Divisi Marketing",
+      "createdAt": "20:05",
+      "priority": "low",
+      "description": "Proyektor tidak menampilkan gambar dari laptop.",
+      "closedBy": "player",
+      "closedAt": "20:31",
+      "resolution": "Kabel HDMI diganti."
+    },
+    {
+      "id": "ticket_4470",
+      "number": 4470,
+      "title": "Reset password",
+      "status": "closed",
+      "from": "player",
+      "createdAt": "22:15",
+      "priority": "low",
+      "description": "Permintaan reset password akun sendiri.",
+      "closedBy": "player",
+      "closedAt": "22:20",
+      "resolution": "Password direset."
+    },
+    {
+      "id": "ticket_4471",
+      "number": 4471,
+      "title": "Printer L4 nyala sendiri",
+      "status": "open",
+      "from": "bagas.p",
+      "createdAt": "22:41",
+      "priority": "low",
+      "description": "Printer di lantai 4 menyala sendiri. Mohon dicek.",
+      "hasCloseButton": true,
+      "closeButtonDisappears": true,
+      "hasRemoteButton": true
+    }
+  ]
+}
