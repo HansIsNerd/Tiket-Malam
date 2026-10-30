@@ -6,7 +6,6 @@ const FAKE_LOADING_MS = 2000;
 
 export function BootScene() {
   const defaultName = useGameStore((s) => s.playerName);
-  const setPlayerName = useGameStore((s) => s.setPlayerName);
   const completeBoot = useGameStore((s) => s.completeBoot);
 
   const [name, setName] = useState<string>(defaultName);
@@ -23,12 +22,10 @@ export function BootScene() {
     e.preventDefault();
     if (isLoading) return;
 
-    const trimmed = name.trim();
-    if (trimmed) setPlayerName(trimmed);
-
+    const submitted = name;
     setIsLoading(true);
     timerRef.current = window.setTimeout(() => {
-      completeBoot();
+      completeBoot(submitted);
     }, FAKE_LOADING_MS);
   };
 

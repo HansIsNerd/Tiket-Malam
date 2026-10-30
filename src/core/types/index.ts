@@ -10,6 +10,11 @@ export interface Size {
   height: number;
 }
 
+export interface WindowBounds {
+  position: Position;
+  size: Size;
+}
+
 export interface WindowInstance {
   id: string;
   appId: string;
@@ -17,6 +22,8 @@ export interface WindowInstance {
   position: Position;
   size: Size;
   isMinimized: boolean;
+  isMaximized: boolean;
+  isHidden: boolean;
   isFocused: boolean;
   zIndex: number;
 }

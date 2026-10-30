@@ -20,6 +20,20 @@ interface UiState {
   closeWindow: (id: string) => void;
   focusWindow: (id: string) => void;
   moveWindow: (id: string, position: Position) => void;
+  minimizeWindow: (id: string) => void;
+  toggleMaximizeWindow: (id: string) => void;
+  hideWindow: (id: string) => void;
+}
+
+function pickTopId(windows: WindowInstance[], excludeId: string): string | null {
+  const top = windows
+    .filter((w) => w.id !== excludeId && !w.isMinimized && !w.isHidden)
+    .sort((a, b) => b.zIndex - a.zIndex)[0];
+  return top ? top.id : null;
+}
+
+function withFocus(windows: WindowInstance[], focusId: string | null): WindowInstance[] {
+  return windows.map((w) => ({ ...w, isFocused: w.id === focusId }));
 }
 
 export const useUiStore = create<UiState>((set, get) => ({
@@ -46,6 +60,8 @@ export const useUiStore = create<UiState>((set, get) => ({
         position: input.position ?? { x: offset, y: offset },
         size: input.size ?? DEFAULT_SIZE,
         isMinimized: false,
+        isMaximized: false,
+        isHidden: false,
         isFocused: true,
         zIndex: state.nextZIndex,
       };
@@ -64,17 +80,10 @@ export const useUiStore = create<UiState>((set, get) => ({
     set((state) => {
       const remaining = state.windows.filter((w) => w.id !== id);
       if (state.focusedWindowId !== id) return { windows: remaining };
-
-      const top = remaining
-        .filter((w) => !w.isMinimized)
-        .sort((a, b) => b.zIndex - a.zIndex)[0];
-
+      const topId = pickTopId(remaining, id);
       return {
-        windows: remaining.map((w) => ({
-          ...w,
-          isFocused: top !== undefined && w.id === top.id,
-        })),
-        focusedWindowId: top ? top.id : null,
+        windows: withFocus(remaining, topId),
+        focusedWindowId: topId,
       };
     }),
 
@@ -84,7 +93,13 @@ export const useUiStore = create<UiState>((set, get) => ({
       return {
         windows: state.windows.map((w) =>
           w.id === id
-            ? { ...w, isFocused: true, isMinimized: false, zIndex: state.nextZIndex }
+            ? {
+                ...w,
+                isFocused: true,
+                isMinimized: false,
+                isHidden: false,
+                zIndex: state.nextZIndex,
+              }
             : { ...w, isFocused: false },
         ),
         focusedWindowId: id,
@@ -96,4 +111,31 @@ export const useUiStore = create<UiState>((set, get) => ({
     set((state) => ({
       windows: state.windows.map((w) => (w.id === id ? { ...w, position } : w)),
     })),
+
+  minimizeWindow: (id) =>
+    set((state) => {
+      const next = state.windows.map((w) =>
+        w.id === id ? { ...w, isMinimized: true, isFocused: false } : w,
+      );
+      if (state.focusedWindowId !== id) return { windows: next };
+      const topId = pickTopId(next, id);
+      return { windows: withFocus(next, topId), focusedWindowId: topId };
+    }),
+
+  toggleMaximizeWindow: (id) =>
+    set((state) => ({
+      windows: state.windows.map((w) =>
+        w.id === id ? { ...w, isMaximized: !w.isMaximized } : w,
+      ),
+    })),
+
+  hideWindow: (id) =>
+    set((state) => {
+      const next = state.windows.map((w) =>
+        w.id === id ? { ...w, isHidden: true, isFocused: false } : w,
+      );
+      if (state.focusedWindowId !== id) return { windows: next };
+      const topId = pickTopId(next, id);
+      return { windows: withFocus(next, topId), focusedWindowId: topId };
+    }),
 }));
