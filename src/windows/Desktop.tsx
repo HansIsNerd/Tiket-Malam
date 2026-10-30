@@ -1,38 +1,36 @@
-import { useEffect } from 'react';
-import { useGameStore } from '@core/stores/gameStore';
+import { motion } from 'framer-motion';
 import { useUiStore } from '@core/stores/uiStore';
-import { loadMailData } from '@core/services/dataLoader';
-import { Desktop } from '@windows/Desktop';
-import { Taskbar } from '@windows/Taskbar';
-import { WindowFrame } from '@windows/WindowFrame';
+import { APPS } from '@windows/appRegistry';
 
-export function WindowsDesktopScene() {
-  const windows = useUiStore((s) => s.windows);
-  const mailData = useGameStore((s) => s.mailData);
-  const setMailData = useGameStore((s) => s.setMailData);
+const WINDOW_SIZES: Record<string, { width: number; height: number }> = {
+  chat: { width: 900, height: 500 },
+  ticket: { width: 800, height: 500 },
+  mail: { width: 1000, height: 500 },
+};
 
-  useEffect(() => {
-    if (mailData) return;
-    let cancelled = false;
-    loadMailData()
-      .then((data) => {
-        if (!cancelled) setMailData(data);
-      })
-      .catch((err: unknown) => {
-        console.warn(err);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [mailData, setMailData]);
+export function Desktop() {
+  const openWindow = useUiStore((s) => s.openWindow);
 
   return (
-    <div className="relative h-screen w-screen overflow-hidden bg-slate-900 text-neutral-100">
-      <Desktop />
-      {windows.map((win) => (
-        <WindowFrame key={win.id} window={win} />
+    <div className="absolute inset-x-0 top-0 bottom-12 grid grid-flow-col grid-rows-[repeat(auto-fill,6rem)] content-start justify-start gap-1 p-3">
+      {APPS.map(({ appId, title, icon: Icon, tileClass }) => (
+        <motion.button
+          key={appId}
+          type="button"
+          onClick={() => openWindow({ appId, title, size: WINDOW_SIZES[appId] })}
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.97 }}
+          transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+          className="group flex h-24 w-24 flex-col items-center justify-center gap-2 rounded-xl text-[11px] text-white"
+        >
+          <div
+            className={`flex h-12 w-12 items-center justify-center rounded-xl shadow-md ring-1 ring-white/10 transition-[filter] duration-200 group-hover:brightness-125 ${tileClass}`}
+          >
+            <Icon size={24} strokeWidth={2} className="text-white" />
+          </div>
+          <span className="[text-shadow:0_1px_2px_rgba(0,0,0,0.8)]">{title}</span>
+        </motion.button>
       ))}
-      <Taskbar />
     </div>
   );
 }

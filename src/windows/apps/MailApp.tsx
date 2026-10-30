@@ -49,6 +49,7 @@ export function MailApp() {
     [activeFolder, mailData],
   );
   const selected = mails.find((m) => m.id === selectedId) ?? null;
+  const attachments = selected?.attachments ?? [];
   const isUnread = (m: Mail) => m.unread && !readIds.has(m.id);
   const inboxUnread = (mailData?.mails ?? []).filter(isUnread).length;
 
@@ -119,10 +120,10 @@ export function MailApp() {
                             unread ? 'font-bold text-neutral-100' : 'text-neutral-300',
                           )}
                         >
-                          {mail.from.name}
+                          {mail.from}
                         </span>
                         <span className="shrink-0 text-[11px] tabular-nums text-neutral-500">
-                          {mail.timeDisplay ?? mail.time}
+                          {mail.time}
                         </span>
                       </span>
                       <span
@@ -153,8 +154,7 @@ export function MailApp() {
             <header className="flex shrink-0 flex-col gap-1 border-b border-[var(--os-border)] bg-[var(--os-panel)] px-5 py-4">
               <h2 className="text-base font-semibold">{selected.subject}</h2>
               <p className="text-xs text-neutral-400">
-                {selected.from.name} &lt;{selected.from.address}&gt; ·{' '}
-                {selected.timeDisplay ?? selected.time}
+                {selected.from} · {selected.time}
               </p>
             </header>
             <div className="chat-scroll min-h-0 flex-1 overflow-y-auto px-5 py-4">
@@ -162,11 +162,11 @@ export function MailApp() {
                 {selected.body.replaceAll('{PLAYER}', playerName)}
               </p>
             </div>
-            {selected.attachments.length > 0 ? (
+            {attachments.length > 0 ? (
               <footer className="flex shrink-0 flex-wrap items-center gap-2 border-t border-[var(--os-border)] bg-[var(--os-panel)] px-5 py-3">
-                {selected.attachments.map((att) => (
+                {attachments.map((att) => (
                   <button
-                    key={att.fileName}
+                    key={att.id}
                     type="button"
                     title={att.fileName}
                     className="flex items-center gap-2 rounded-md border border-[var(--os-border)] bg-[var(--os-bg)] px-3 py-1.5 text-xs text-neutral-200 transition-colors hover:bg-white/10"
