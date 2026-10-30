@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react';
-import { Circle, MessageSquare } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import type { FormEvent } from 'react';
+import { Circle, MessageSquare, Send } from 'lucide-react';
 import { useGameStore } from '@core/stores/gameStore';
 import { loadChatData } from '@core/services/dataLoader';
 import { cx } from '@core/utils/cx';
@@ -8,6 +9,8 @@ export function ChatApp() {
   const chatData = useGameStore((s) => s.chatData);
   const setChatData = useGameStore((s) => s.setChatData);
   const [activeContactId, setActiveContactId] = useState<string | null>(null);
+  const [draft, setDraft] = useState<string>('');
+  const bottomRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     if (chatData) return;
@@ -25,6 +28,25 @@ export function ChatApp() {
   }, [chatData, setChatData]);
 
   const contacts = chatData?.contacts ?? [];
+  const activeContact = contacts.find((c) => c.id === activeContactId) ?? null;
+  const activeThread =
+    chatData?.threads.find((t) => t.contactId === activeContactId) ?? null;
+  const isInputDisabled = activeThread?.inputDisabled === true;
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ block: 'end' });
+  }, [activeContactId, activeThread?.messages.length]);
+
+  const handleSelectContact = (id: string) => {
+    setActiveContactId(id);
+    setDraft('');
+  };
+
+  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (isInputDisabled || draft.trim() === '') return;
+    setDraft('');
+  };
 
   return (
     <div className="flex h-full w-full bg-[var(--os-bg)] text-neutral-100">
@@ -37,7 +59,7 @@ export function ChatApp() {
               <li key={contact.id}>
                 <button
                   type="button"
-                  onClick={() => setActiveContactId(contact.id)}
+                  onClick={() => handleSelectContact(contact.id)}
                   className={cx(
                     'flex w-full items-center gap-3 px-4 py-3 text-left text-sm transition-colors hover:bg-white/10',
                     isActive && 'bg-white/10',
@@ -62,12 +84,92 @@ export function ChatApp() {
       </aside>
 
       <section className="flex min-w-0 flex-1 flex-col bg-[var(--os-bg)]">
-        {activeContactId === null ? (
+        {activeContact === null ? (
           <div className="flex flex-1 flex-col items-center justify-center gap-3 text-neutral-500">
             <MessageSquare size={32} strokeWidth={1.5} />
             <p className="text-sm">Pilih kontak untuk mulai mengobrol</p>
           </div>
-        ) : null}
+        ) : (
+          <>
+            <header className="flex h-12 shrink-0 items-center border-b border-[var(--os-border)] px-4 text-sm font-semibold">
+              <span className="truncate">{activeContact.displayName}</span>
+            </header>
+
+            <div className="chat-scroll flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto px-4 py-4">
+              {activeThread === null || activeThread.messages.length === 0 ? (
+                <p className="m-auto text-sm text-neutral-500">
+                  Belum ada pesan
+                </p>
+              ) : (
+                activeThread.messages.map((msg, index) => {
+                  const isPlayer = msg.from === 'player';
+                  return (
+                    <div
+                      key={`${msg.time}-${index}`}
+                      className={cx(
+                        'flex w-full',
+                        isPlayer ? 'justify-end' : 'justify-start',
+                      )}
+                    >
+                      <div
+                        className={cx(
+                          'flex max-w-[75%] flex-col gap-1 rounded-2xl px-3 py-2 text-sm',
+                          isPlayer
+                            ? 'rounded-br-sm bg-[var(--os-accent)] text-white'
+                            : 'rounded-bl-sm bg-[var(--os-panel-hover)] text-neutral-100',
+                        )}
+                      >
+                        <p className="whitespace-pre-wrap break-words">
+                          {msg.text}
+                        </p>
+                        <span
+                          className={cx(
+                            'self-end text-[10px] tabular-nums',
+                            isPlayer ? 'text-white/70' : 'text-neutral-400',
+                          )}
+                        >
+                          {msg.time}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+              <div ref={bottomRef} />
+            </div>
+
+            <form
+              onSubmit={handleSubmit}
+              className="flex shrink-0 items-center gap-2 border-t border-[var(--os-border)] bg-[var(--os-panel)] p-3"
+            >
+              <input
+                type="text"
+                value={draft}
+                onChange={(e) => setDraft(e.target.value)}
+                disabled={isInputDisabled}
+                placeholder={
+                  isInputDisabled
+                    ? (activeThread?.inputDisabledReason ?? 'Tidak dapat membalas')
+                    : 'Ketik pesan...'
+                }
+                className={cx(
+                  'min-w-0 flex-1 rounded-md border px-3 py-2 text-sm outline-none transition-colors',
+                  isInputDisabled
+                    ? 'cursor-not-allowed border-[var(--os-border)] bg-black/40 text-neutral-500 placeholder:text-neutral-600'
+                    : 'border-[var(--os-border)] bg-[var(--os-bg)] text-neutral-100 placeholder:text-neutral-500 focus:border-[var(--os-accent)]',
+                )}
+              />
+              <button
+                type="submit"
+                disabled={isInputDisabled || draft.trim() === ''}
+                aria-label="Kirim"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-[var(--os-accent)] text-white transition-[filter,opacity] hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:brightness-100"
+              >
+                <Send size={16} strokeWidth={2} />
+              </button>
+            </form>
+          </>
+        )}
       </section>
     </div>
   );

@@ -1,22 +1,33 @@
 import { useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import { useGameStore } from '@core/stores/gameStore';
+import { loadChatData } from '@core/services/dataLoader';
 
 const FAKE_LOADING_MS = 2000;
 
 export function BootScene() {
   const defaultName = useGameStore((s) => s.playerName);
   const completeBoot = useGameStore((s) => s.completeBoot);
+  const setChatData = useGameStore((s) => s.setChatData);
 
   const [name, setName] = useState<string>(defaultName);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const timerRef = useRef<number | null>(null);
 
   useEffect(() => {
+    let cancelled = false;
+    loadChatData()
+      .then((data) => {
+        if (!cancelled) setChatData(data);
+      })
+      .catch((err: unknown) => {
+        console.warn(err);
+      });
     return () => {
+      cancelled = true;
       if (timerRef.current !== null) window.clearTimeout(timerRef.current);
     };
-  }, []);
+  }, [setChatData]);
 
   const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();

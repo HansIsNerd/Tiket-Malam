@@ -2,6 +2,10 @@ import { motion } from 'framer-motion';
 import { useUiStore } from '@core/stores/uiStore';
 import { APPS } from '@windows/appRegistry';
 
+const WINDOW_SIZES: Record<string, { width: number; height: number }> = {
+  chat: { width: 900, height: 600 },
+};
+
 export function Desktop() {
   const openWindow = useUiStore((s) => s.openWindow);
 
@@ -11,13 +15,7 @@ export function Desktop() {
         <motion.button
           key={appId}
           type="button"
-          onClick={() =>
-            openWindow({
-              appId,
-              title,
-              size: appId === 'chat' ? { width: 720, height: 460 } : undefined,
-            })
-          } 
+          onClick={() => openWindow({ appId, title, size: WINDOW_SIZES[appId] })}
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.97 }}
           transition={{ type: 'spring', stiffness: 400, damping: 25 }}
