@@ -3,27 +3,25 @@ import { ChatDataSchema } from '@core/types/chat';
 import type { ChatData } from '@core/types/chat';
 import { TicketDataSchema } from '@core/types/tickets';
 import type { TicketData } from '@core/types/tickets';
-
 import { MailDataSchema } from '@core/types/mail';
 import type { MailData } from '@core/types/mail';
 import { FileDataSchema } from '@core/types/files';
 import type { FileData } from '@core/types/files';
+import { DirectoryDataSchema } from '@core/types/directory';
+import type { DirectoryData } from '@core/types/directory';
+
 const CHAT_DATA_URL = '/data/chat.json';
 const TICKET_DATA_URL = '/data/tickets.json';
 const MAIL_DATA_URL = '/data/mail.json';
 const FILE_DATA_URL = '/data/files.json';
+const DIRECTORY_DATA_URL = '/data/directory.json';
 
-export function loadMailData(): Promise<MailData> {
-  return loadValidated(MAIL_DATA_URL, MailDataSchema);
-}
-export function loadFileData(): Promise<FileData> {
-  return loadValidated(FILE_DATA_URL, FileDataSchema);
-}
 export interface GameData {
   chatData: ChatData;
   ticketData: TicketData;
   mailData: MailData;
   fileData: FileData;
+  directoryData: DirectoryData;
 }
 
 async function fetchJson(url: string): Promise<unknown> {
@@ -59,12 +57,25 @@ export function loadTicketData(): Promise<TicketData> {
   return loadValidated(TICKET_DATA_URL, TicketDataSchema);
 }
 
+export function loadMailData(): Promise<MailData> {
+  return loadValidated(MAIL_DATA_URL, MailDataSchema);
+}
+
+export function loadFileData(): Promise<FileData> {
+  return loadValidated(FILE_DATA_URL, FileDataSchema);
+}
+
+export function loadDirectoryData(): Promise<DirectoryData> {
+  return loadValidated(DIRECTORY_DATA_URL, DirectoryDataSchema);
+}
+
 export async function loadAllData(): Promise<GameData> {
-  const [chatData, ticketData, mailData, fileData] = await Promise.all([
+  const [chatData, ticketData, mailData, fileData, directoryData] = await Promise.all([
     loadChatData(),
     loadTicketData(),
     loadMailData(),
     loadFileData(),
+    loadDirectoryData(),
   ]);
-  return { chatData, ticketData, mailData, fileData };
+  return { chatData, ticketData, mailData, fileData, directoryData };
 }

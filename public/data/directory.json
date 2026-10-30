@@ -1,0 +1,37 @@
+{
+  "employees": [
+    {
+      "id": "player",
+      "name": "player",
+      "role": "IT Helpdesk (Shift Malam)",
+      "status": "active"
+    },
+    {
+      "id": "rani",
+      "name": "Rani",
+      "role": "Supervisor IT",
+      "status": "active"
+    },
+    {
+      "id": "pak_darto",
+      "name": "Pak Darto",
+      "role": "Security Gedung",
+      "status": "active"
+    },
+    {
+      "id": "bu_sari",
+      "name": "Sari Wulandari",
+      "role": "HR",
+      "status": "active"
+    },
+    {
+      "id": "bagas_p",
+      "name": "Bagas Prasetyo",
+      "username": "bagas.p",
+      "role": "IT Helpdesk",
+      "status": "resigned",
+      "hasProfile": true,
+      "detail": "IT Helpdesk — Lantai 4"
+    }
+  ]
+}

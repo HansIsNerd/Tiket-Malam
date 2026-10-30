@@ -4,17 +4,15 @@ import type { ChatData } from '@core/types/chat';
 import type { MailData } from '@core/types/mail';
 import type { FileData } from '@core/types/files';
 import type { TicketData } from '@core/types/tickets';
-
+import type { DirectoryData } from '@core/types/directory';
 export interface Act1Flags {
   ticket4471CloseClicked: boolean;
   ticket4471ReplyAttempted: boolean;
-  janganBukaReadEnough: boolean;
+  directoryBagasSeen: boolean;
 }
-
 export interface Flags {
   act1: Act1Flags;
 }
-
 interface GameState {
   playerName: string;
   act: number;
@@ -23,6 +21,7 @@ interface GameState {
   ticketData: TicketData | null;
   mailData: MailData | null;
   fileData: FileData | null;
+  directoryData: DirectoryData | null;
   flags: Flags;
   setPlayerName: (name: string) => void;
   setAct: (act: number) => void;
@@ -31,6 +30,7 @@ interface GameState {
   setTicketData: (data: TicketData) => void;
   setMailData: (data: MailData) => void;
   setFileData: (data: FileData) => void;
+  setDirectoryData: (data: DirectoryData) => void;
   setFlag: <K extends keyof Act1Flags>(
     path: `act1.${K}`,
     value: Act1Flags[K],
@@ -46,28 +46,23 @@ export const useGameStore = create<GameState>((set) => ({
   ticketData: null,
   mailData: null,
   fileData: null,
+  directoryData: null,
   flags: {
     act1: {
       ticket4471CloseClicked: false,
       ticket4471ReplyAttempted: false,
-      janganBukaReadEnough: false,
+      directoryBagasSeen: false,
     },
   },
 
   setPlayerName: (name) => set({ playerName: name }),
-
   setAct: (act) => set({ act }),
-
   setTime: (time) => set({ timeCurrent: time }),
-
   setChatData: (data) => set({ chatData: data }),
-
   setTicketData: (data) => set({ ticketData: data }),
-
   setMailData: (data) => set({ mailData: data }),
-
   setFileData: (data) => set({ fileData: data }),
-
+  setDirectoryData: (data) => set({ directoryData: data }),
   setFlag: (path, value) =>
     set((state) => {
       const key = path.slice('act1.'.length) as keyof Act1Flags;

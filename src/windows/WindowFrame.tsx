@@ -12,6 +12,7 @@ import { ChatApp } from '@windows/apps/ChatApp';
 import { TicketApp } from '@windows/apps/TicketApp';
 import { MailApp } from '@windows/apps/MailApp';
 import { FileExplorerApp } from '@windows/apps/FileExplorerApp';
+import { DirectoryApp } from '@windows/apps/DirectoryApp';
 
 interface WindowFrameProps {
   window: WindowInstance;
@@ -35,6 +36,8 @@ function renderApp(appId: string) {
       return <MailApp />;
     case 'files':
       return <FileExplorerApp />;
+    case 'directory':
+      return <DirectoryApp />;
     case 'dummy':
     default:
       return <DummyApp />;

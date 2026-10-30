@@ -13,6 +13,7 @@ const WINDOW_SIZES: Record<string, { width: number; height: number }> = {
   chat: { width: 900, height: 500 },
   ticket: { width: 800, height: 500 },
   mail: { width: 1000, height: 500 },
+  directory: { width: 820, height: 480 },
 };
 
 export function Desktop() {

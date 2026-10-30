@@ -18,6 +18,7 @@ export function BootScene() {
   const setTicketData = useGameStore((s) => s.setTicketData);
   const setMailData = useGameStore((s) => s.setMailData);
   const setFileData = useGameStore((s) => s.setFileData);
+  const setDirectoryData = useGameStore((s) => s.setDirectoryData);
 
   const [password, setPassword] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
