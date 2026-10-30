@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { FileText, X } from 'lucide-react';
-import { useGameStore } from '@core/stores/gameStore';
 import { useUiStore } from '@core/stores/uiStore';
 import type { FileItem } from '@core/types/files';
 import { APPS } from '@windows/appRegistry';
@@ -19,7 +18,6 @@ const WINDOW_SIZES: Record<string, { width: number; height: number }> = {
 
 export function Desktop() {
   const openWindow = useUiStore((s) => s.openWindow);
-  const fileData = useGameStore((s) => s.fileData);
   const [openFile, setOpenFile] = useState<FileItem | null>(null);
 
   return (
