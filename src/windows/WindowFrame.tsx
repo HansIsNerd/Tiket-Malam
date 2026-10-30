@@ -13,6 +13,7 @@ import { TicketApp } from '@windows/apps/TicketApp';
 import { MailApp } from '@windows/apps/MailApp';
 import { FileExplorerApp } from '@windows/apps/FileExplorerApp';
 import { DirectoryApp } from '@windows/apps/DirectoryApp';
+import { RemoteApp } from '@windows/apps/RemoteApp';
 
 interface WindowFrameProps {
   window: WindowInstance;
@@ -38,6 +39,8 @@ function renderApp(appId: string) {
       return <FileExplorerApp />;
     case 'directory':
       return <DirectoryApp />;
+    case 'remote':
+      return <RemoteApp />;
     case 'dummy':
     default:
       return <DummyApp />;

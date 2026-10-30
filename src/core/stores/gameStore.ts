@@ -9,6 +9,9 @@ export interface Act1Flags {
   ticket4471CloseClicked: boolean;
   ticket4471ReplyAttempted: boolean;
   directoryBagasSeen: boolean;
+  signedOffboarding: boolean;
+  janganBukaRead: boolean;
+  janganBukaReadEnough: boolean;
 }
 export interface Flags {
   act1: Act1Flags;
@@ -52,6 +55,9 @@ export const useGameStore = create<GameState>((set) => ({
       ticket4471CloseClicked: false,
       ticket4471ReplyAttempted: false,
       directoryBagasSeen: false,
+      signedOffboarding: false,
+      janganBukaRead: false,
+      janganBukaReadEnough: false,
     },
   },
 

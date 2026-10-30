@@ -14,14 +14,13 @@ const WINDOW_SIZES: Record<string, { width: number; height: number }> = {
   ticket: { width: 800, height: 500 },
   mail: { width: 1000, height: 500 },
   directory: { width: 820, height: 480 },
+  remote: { width: 860, height: 520 },
 };
 
 export function Desktop() {
   const openWindow = useUiStore((s) => s.openWindow);
   const fileData = useGameStore((s) => s.fileData);
   const [openFile, setOpenFile] = useState<FileItem | null>(null);
-
-  const files = fileData?.files ?? [];
 
   return (
     <div
@@ -47,25 +46,6 @@ export function Desktop() {
               <Icon size={24} strokeWidth={2} className="text-white" />
             </div>
             <span className="[text-shadow:0_1px_2px_rgba(0,0,0,0.8)]">{title}</span>
-          </motion.button>
-        ))}
-
-        {files.map((file) => (
-          <motion.button
-            key={file.id}
-            type="button"
-            onClick={() => setOpenFile(file)}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.97 }}
-            transition={{ type: 'spring', stiffness: 400, damping: 25 }}
-            className="group flex h-24 w-24 flex-col items-center justify-center gap-2 rounded-xl text-[11px] text-white"
-          >
-            <div className="flex h-12 w-12 items-center justify-center text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] transition-[filter] duration-200 group-hover:brightness-125">
-              <FileText size={32} strokeWidth={1.5} />
-            </div>
-            <span className="max-w-full break-all px-1 text-center leading-tight [text-shadow:0_1px_2px_rgba(0,0,0,0.8)]">
-              {file.name}
-            </span>
           </motion.button>
         ))}
       </div>
