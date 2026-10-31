@@ -60,7 +60,7 @@ function mergeIds(current: string[], incoming: string[]): string[] {
 }
 
 export const useUiStore = create<UiState>((set, get) => ({
-  scene: 'boot',
+  scene: 'warning',
   windows: [],
   focusedWindowId: null,
   nextZIndex: 1,

@@ -1,5 +1,7 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import { useUiStore } from '@core/stores/uiStore';
+import { ContentWarningScene } from '@scenes/ContentWarningScene';
+import { MainMenuScene } from '@scenes/MainMenuScene';
 import { BootScene } from '@scenes/BootScene';
 import { WindowsDesktopScene } from '@scenes/WindowsDesktopScene';
 
@@ -7,6 +9,10 @@ const SCENE_TRANSITION = { duration: 0.5, ease: 'easeInOut' } as const;
 
 function renderScene(scene: string) {
   switch (scene) {
+    case 'warning':
+      return <ContentWarningScene />;
+    case 'menu':
+      return <MainMenuScene />;
     case 'boot':
       return <BootScene />;
     case 'windows':

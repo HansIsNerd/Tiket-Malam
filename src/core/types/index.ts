@@ -1,4 +1,4 @@
-export type Scene = 'boot' | 'windows' | 'macos' | 'ending' | 'menu';
+export type Scene = 'warning' | 'menu' | 'boot' | 'windows' | 'macos' | 'ending';
 
 export interface Position {
   x: number;
