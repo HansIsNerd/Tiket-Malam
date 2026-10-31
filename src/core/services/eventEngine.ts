@@ -1,6 +1,7 @@
 import { useGameStore } from '@core/stores/gameStore';
 import type { FlagPath } from '@core/stores/gameStore';
 import { useNotificationStore } from '@core/stores/notificationStore';
+import { useUiStore } from '@core/stores/uiStore';
 import { EventDataSchema } from '@core/types/events';
 import type { EventAction, EventCondition, GameEvent } from '@core/types/events';
 
@@ -8,6 +9,7 @@ const EVENT_DATA_URL = '/data/events.json';
 const MAX_PASSES = 10;
 const DAY_MINUTES = 24 * 60;
 const SHIFT_WRAP_MINUTES = 12 * 60;
+const CHAT_WINDOW = { appId: 'chat', title: 'Chat', size: { width: 900, height: 500 } } as const;
 
 type GameSnapshot = ReturnType<typeof useGameStore.getState>;
 
@@ -21,12 +23,14 @@ function toShiftMinutes(time: string): number {
   return total < SHIFT_WRAP_MINUTES ? total + DAY_MINUTES : total;
 }
 
-function readFlag(state: GameSnapshot, path: string): boolean | number | undefined {
+function readFlag(state: GameSnapshot, path: string): boolean | number | string | undefined {
   const [section, key] = path.split('.');
   if (!section || !key) return undefined;
   const bucket = (state.flags as unknown as Record<string, Record<string, unknown>>)[section];
   const value = bucket?.[key];
-  return typeof value === 'boolean' || typeof value === 'number' ? value : undefined;
+  return typeof value === 'boolean' || typeof value === 'number' || typeof value === 'string'
+    ? value
+    : undefined;
 }
 
 function checkCondition(state: GameSnapshot, cond: EventCondition): boolean {
@@ -64,6 +68,14 @@ function runAction(action: EventAction): void {
     case 'advance_act':
       game.setAct(action.act);
       break;
+    case 'play_audio':
+      break;
+    case 'open_chat_thread': {
+      const ui = useUiStore.getState();
+      ui.unlockChatThread(action.threadId);
+      ui.openWindow({ ...CHAT_WINDOW });
+      break;
+    }
   }
 }
 

@@ -19,6 +19,8 @@ interface UiState {
   nextZIndex: number;
   activeTrayMenu: TrayMenu;
   isStartMenuOpen: boolean;
+  unlockedChatThreadIds: string[];
+  pendingChatThreadId: string | null;
   setScene: (scene: Scene) => void;
   openWindow: (input: OpenWindowInput) => void;
   closeWindow: (id: string) => void;
@@ -30,6 +32,8 @@ interface UiState {
   hideWindow: (id: string) => void;
   setTrayMenu: (menu: TrayMenu) => void;
   toggleStartMenu: () => void;
+  unlockChatThread: (threadId: string) => void;
+  clearPendingChatThread: () => void;
 }
 
 function pickTopId(windows: WindowInstance[], excludeId: string): string | null {
@@ -50,6 +54,8 @@ export const useUiStore = create<UiState>((set, get) => ({
   nextZIndex: 1,
   activeTrayMenu: null,
   isStartMenuOpen: false,
+  unlockedChatThreadIds: [],
+  pendingChatThreadId: null,
 
   setScene: (scene) => set({ scene }),
 
@@ -168,4 +174,14 @@ export const useUiStore = create<UiState>((set, get) => ({
       isStartMenuOpen: !state.isStartMenuOpen,
       activeTrayMenu: null,
     })),
+
+  unlockChatThread: (threadId) =>
+    set((state) => ({
+      unlockedChatThreadIds: state.unlockedChatThreadIds.includes(threadId)
+        ? state.unlockedChatThreadIds
+        : [...state.unlockedChatThreadIds, threadId],
+      pendingChatThreadId: threadId,
+    })),
+
+  clearPendingChatThread: () => set({ pendingChatThreadId: null }),
 }));

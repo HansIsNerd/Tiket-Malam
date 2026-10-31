@@ -18,6 +18,7 @@ export const ChatThreadSchema = z.object({
   id: z.string().min(1),
   contactId: z.string().min(1),
   messages: z.array(ChatMessageSchema),
+  locked: z.boolean().optional(),
   inputDisabled: z.boolean().optional(),
   inputDisabledReason: z.string().optional(),
 });

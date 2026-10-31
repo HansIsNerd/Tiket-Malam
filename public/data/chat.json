@@ -13,6 +13,14 @@
       ]
     },
     {
+      "id": "chat_darto_gate",
+      "contactId": "pak_darto",
+      "locked": true,
+      "messages": [
+        { "time": "23:25", "from": "pak_darto", "text": "Mas, jangan naik." }
+      ]
+    },
+    {
       "id": "chat_bagas_1",
       "contactId": "bagas_p",
       "messages": [

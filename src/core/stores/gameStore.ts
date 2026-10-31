@@ -14,15 +14,21 @@ export interface Act1Flags {
   janganBukaRead: boolean;
   janganBukaReadEnough: boolean;
   playerTriedToQuit: boolean;
+  act2Gate: boolean;
 }
 
 export interface Act2Flags {
   e02ScrollCount: number;
 }
 
+export interface UiFlags {
+  desktopTheme: 'light' | 'dark';
+}
+
 export interface Flags {
   act1: Act1Flags;
   act2: Act2Flags;
+  ui: UiFlags;
 }
 
 export type FlagPath = {
@@ -77,9 +83,13 @@ export const useGameStore = create<GameState>((set) => ({
       janganBukaRead: false,
       janganBukaReadEnough: false,
       playerTriedToQuit: false,
+      act2Gate: false,
     },
     act2: {
       e02ScrollCount: 0,
+    },
+    ui: {
+      desktopTheme: 'light',
     },
   },
 

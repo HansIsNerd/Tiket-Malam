@@ -1,1 +1,28 @@
-{"_schema": 1, "events": []}
+{
+  "_schema": 1,
+  "events": [
+    {
+      "id": "e_gate_trigger",
+      "once": true,
+      "condition": {
+        "type": "flag",
+        "path": "act1.janganBukaReadEnough",
+        "value": true
+      },
+      "actions": [
+        { "type": "set_flag", "path": "act1.act2Gate", "value": true },
+        { "type": "advance_act", "act": 2 },
+        { "type": "set_flag", "path": "ui.desktopTheme", "value": "dark" },
+        {
+          "type": "show_notification",
+          "payload": {
+            "title": "Pak Darto",
+            "message": "Mas, jangan naik.",
+            "appId": "chat"
+          }
+        },
+        { "type": "open_chat_thread", "threadId": "chat_darto_gate" }
+      ]
+    }
+  ]
+}

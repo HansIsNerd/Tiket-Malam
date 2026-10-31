@@ -4,6 +4,7 @@ import { FileText, X } from 'lucide-react';
 import { useGameStore } from '@core/stores/gameStore';
 import { useUiStore } from '@core/stores/uiStore';
 import type { FileItem } from '@core/types/files';
+import { cx } from '@core/utils/cx';
 import { APPS } from '@windows/appRegistry';
 
 const WALLPAPER_URL =
@@ -30,13 +31,24 @@ export function Desktop() {
   const [openFile, setOpenFile] = useState<FileItem | null>(null);
 
   const visibleApps = APPS.filter((app) => act >= (ACT_GATED_APPS[app.appId] ?? 1));
+  const isDark = act >= 2;
 
   return (
-    <div
-      className="absolute inset-x-0 top-0 bottom-12 bg-cover bg-center"
-      style={{ backgroundImage: `url(${WALLPAPER_URL})` }}
-    >
-      <div className="absolute inset-0 bg-black/50" />
+    <div className="absolute inset-x-0 top-0 bottom-12">
+      <div
+        aria-hidden="true"
+        className={cx(
+          'absolute inset-0 bg-cover bg-center transition-[filter] duration-1000',
+          isDark ? 'brightness-50 grayscale' : 'brightness-100 grayscale-0',
+        )}
+        style={{ backgroundImage: `url(${WALLPAPER_URL})` }}
+      />
+      <div
+        className={cx(
+          'absolute inset-0 transition-colors duration-1000',
+          isDark ? 'bg-black/60' : 'bg-black/50',
+        )}
+      />
 
       <div className="relative grid h-full grid-flow-col grid-rows-[repeat(auto-fill,6rem)] content-start justify-start gap-1 p-3">
         {visibleApps.map(({ appId, title, icon: Icon, tileClass }) => (

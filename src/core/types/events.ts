@@ -3,7 +3,7 @@ import { z } from 'zod';
 const TIME_PATTERN = /^([01]\d|2[0-3]):[0-5]\d$/;
 
 export type EventCondition =
-  | { type: 'flag'; path: string; value?: boolean | number }
+  | { type: 'flag'; path: string; value?: boolean | number | string }
   | { type: 'time_after'; time: string }
   | { type: 'act_is'; act: number }
   | { type: 'and'; conditions: EventCondition[] }
@@ -15,7 +15,7 @@ export const EventConditionSchema: z.ZodType<EventCondition> = z.lazy(() =>
     z.object({
       type: z.literal('flag'),
       path: z.string().min(1),
-      value: z.union([z.boolean(), z.number()]).optional(),
+      value: z.union([z.boolean(), z.number(), z.string()]).optional(),
     }),
     z.object({
       type: z.literal('time_after'),
@@ -38,7 +38,7 @@ export const EventActionSchema = z.discriminatedUnion('type', [
   z.object({
     type: z.literal('set_flag'),
     path: z.string().min(1),
-    value: z.union([z.boolean(), z.number()]),
+    value: z.union([z.boolean(), z.number(), z.string()]),
   }),
   z.object({
     type: z.literal('show_notification'),
@@ -49,6 +49,8 @@ export const EventActionSchema = z.discriminatedUnion('type', [
     time: z.string().regex(TIME_PATTERN, 'Format waktu harus HH:MM'),
   }),
   z.object({ type: z.literal('advance_act'), act: z.number().int() }),
+  z.object({ type: z.literal('play_audio'), audioId: z.string().min(1) }),
+  z.object({ type: z.literal('open_chat_thread'), threadId: z.string().min(1) }),
 ]);
 
 export const GameEventSchema = z.object({

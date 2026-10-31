@@ -2,12 +2,16 @@ import { useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import { Circle, MessageSquare, Send } from 'lucide-react';
 import { useGameStore } from '@core/stores/gameStore';
+import { useUiStore } from '@core/stores/uiStore';
 import { loadChatData } from '@core/services/dataLoader';
 import { cx } from '@core/utils/cx';
 
 export function ChatApp() {
   const chatData = useGameStore((s) => s.chatData);
   const setChatData = useGameStore((s) => s.setChatData);
+  const unlockedThreadIds = useUiStore((s) => s.unlockedChatThreadIds);
+  const pendingThreadId = useUiStore((s) => s.pendingChatThreadId);
+  const clearPendingThread = useUiStore((s) => s.clearPendingChatThread);
   const [activeContactId, setActiveContactId] = useState<string | null>(null);
   const [draft, setDraft] = useState<string>('');
   const bottomRef = useRef<HTMLDivElement | null>(null);
@@ -27,15 +31,30 @@ export function ChatApp() {
     };
   }, [chatData, setChatData]);
 
+  useEffect(() => {
+    if (pendingThreadId === null || !chatData) return;
+    const target = chatData.threads.find((t) => t.id === pendingThreadId);
+    if (target) {
+      setActiveContactId(target.contactId);
+      setDraft('');
+    }
+    clearPendingThread();
+  }, [pendingThreadId, chatData, clearPendingThread]);
+
   const contacts = chatData?.contacts ?? [];
   const activeContact = contacts.find((c) => c.id === activeContactId) ?? null;
-  const activeThread =
-    chatData?.threads.find((t) => t.contactId === activeContactId) ?? null;
-  const isInputDisabled = activeThread?.inputDisabled === true;
+  const contactThreads = (chatData?.threads ?? []).filter(
+    (t) =>
+      t.contactId === activeContactId &&
+      (t.locked !== true || unlockedThreadIds.includes(t.id)),
+  );
+  const messages = contactThreads.flatMap((t) => t.messages);
+  const disabledThread = contactThreads.find((t) => t.inputDisabled === true) ?? null;
+  const isInputDisabled = disabledThread !== null;
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ block: 'end' });
-  }, [activeContactId, activeThread?.messages.length]);
+  }, [activeContactId, messages.length]);
 
   const handleSelectContact = (id: string) => {
     setActiveContactId(id);
@@ -96,12 +115,12 @@ export function ChatApp() {
             </header>
 
             <div className="chat-scroll flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto px-4 py-4">
-              {activeThread === null || activeThread.messages.length === 0 ? (
+              {messages.length === 0 ? (
                 <p className="m-auto text-sm text-neutral-500">
                   Belum ada pesan
                 </p>
               ) : (
-                activeThread.messages.map((msg, index) => {
+                messages.map((msg, index) => {
                   const isPlayer = msg.from === 'player';
                   return (
                     <div
@@ -149,7 +168,7 @@ export function ChatApp() {
                 disabled={isInputDisabled}
                 placeholder={
                   isInputDisabled
-                    ? (activeThread?.inputDisabledReason ?? 'Tidak dapat membalas')
+                    ? (disabledThread?.inputDisabledReason ?? 'Tidak dapat membalas')
                     : 'Ketik pesan...'
                 }
                 className={cx(
