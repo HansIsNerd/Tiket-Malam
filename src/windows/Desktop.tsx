@@ -29,23 +29,61 @@ const ACT_GATED_APPS: Record<string, number> = {
 
 const DESKTOP_FILE_ORDER: readonly string[] = ['file_panduan_shift', 'file_catatan_shift'];
 
+const TASK_FILE_ID = 'file_tugas_malam_ini';
+const TASK_FILE_NAME = 'Tugas_Malam_Ini.txt';
+
+interface TaskState {
+  ticketSeen: boolean;
+  remoteOpened: boolean;
+  janganBukaRead: boolean;
+  logRead: boolean;
+}
+
+function resolveTaskLine(s: TaskState): string {
+  if (s.logRead) return '1. Tunggu instruksi selanjutnya. Jangan tidur.';
+  if (s.janganBukaRead) return '1. Sistem bermasalah. Buka aplikasi Log dan periksa.';
+  if (!s.ticketSeen) return '1. Buka aplikasi Ticket. Ada tiket masuk dari bagas.p.';
+  if (!s.remoteOpened) return '1. Remote ke PC Lantai 4 (L4).';
+  return '1. Periksa isi PC Lantai 4.';
+}
+
 export function Desktop() {
   const openWindow = useUiStore((s) => s.openWindow);
   const act = useGameStore((s) => s.act);
   const fileData = useGameStore((s) => s.fileData);
+  const ticketSeen = useGameStore((s) => s.flags.act1.ticket4471Seen);
+  const remoteOpened = useGameStore((s) => s.flags.act1.remoteOpened);
+  const janganBukaRead = useGameStore((s) => s.flags.act1.janganBukaRead);
+  const logRead = useGameStore((s) => s.flags.act2.e02LogRead);
   const badges = useAppBadges();
-  const [openFile, setOpenFile] = useState<FileItem | null>(null);
+  const [openFileId, setOpenFileId] = useState<string | null>(null);
   const [selectedFileId, setSelectedFileId] = useState<string | null>(null);
 
   const visibleApps = APPS.filter((app) => act >= (ACT_GATED_APPS[app.appId] ?? 1));
   const isDark = act >= 2;
 
+  const taskContent = useMemo(
+    () =>
+      `TUGAS MALAM INI\n\n${resolveTaskLine({ ticketSeen, remoteOpened, janganBukaRead, logRead })}`,
+    [ticketSeen, remoteOpened, janganBukaRead, logRead],
+  );
+
   const desktopFiles: FileItem[] = useMemo(() => {
     const all = fileData?.files ?? [];
-    return DESKTOP_FILE_ORDER.map((id) => all.find((f) => f.id === id)).filter(
+    const fromData = DESKTOP_FILE_ORDER.map((id) => all.find((f) => f.id === id)).filter(
       (f): f is FileItem => f !== undefined && (f.location ?? 'desktop') === 'desktop',
     );
-  }, [fileData]);
+    const task: FileItem = {
+      id: TASK_FILE_ID,
+      name: TASK_FILE_NAME,
+      type: 'text',
+      location: 'desktop',
+      content: taskContent,
+    };
+    return [task, ...fromData];
+  }, [fileData, taskContent]);
+
+  const openFile = desktopFiles.find((f) => f.id === openFileId) ?? null;
 
   return (
     <div className="absolute inset-x-0 top-0 bottom-12">
@@ -92,7 +130,7 @@ export function Desktop() {
             title={file.name}
             onClick={() => {
               setSelectedFileId(file.id);
-              setOpenFile(file);
+              setOpenFileId(file.id);
             }}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.97 }}
@@ -123,7 +161,7 @@ export function Desktop() {
           role="dialog"
           aria-modal="true"
           aria-label={openFile.name}
-          onClick={() => setOpenFile(null)}
+          onClick={() => setOpenFileId(null)}
           className="absolute inset-0 z-[5000] flex items-center justify-center bg-black/40"
         >
           <div
@@ -139,7 +177,7 @@ export function Desktop() {
                 type="button"
                 aria-label="Close"
                 autoFocus
-                onClick={() => setOpenFile(null)}
+                onClick={() => setOpenFileId(null)}
                 className="flex h-9 w-11 items-center justify-center transition-colors hover:bg-[#E81123]"
               >
                 <X size={14} strokeWidth={1.5} />

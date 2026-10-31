@@ -16,6 +16,10 @@ export interface Act1Flags {
   janganBukaReadEnough: boolean;
   playerTriedToQuit: boolean;
   act2Gate: boolean;
+  ticket4471Seen: boolean;
+  remoteOpened: boolean;
+  dartoNudgeTicketSent: boolean;
+  dartoNudgeRemoteSent: boolean;
 }
 
 export interface Act2Flags {
@@ -138,6 +142,10 @@ export const useGameStore = create<GameState>()(
           janganBukaReadEnough: false,
           playerTriedToQuit: false,
           act2Gate: false,
+          ticket4471Seen: false,
+          remoteOpened: false,
+          dartoNudgeTicketSent: false,
+          dartoNudgeRemoteSent: false,
         },
         act2: {
           e02LogOpened: false,

@@ -9,14 +9,34 @@ const EVENT_DATA_URL = '/data/events.json';
 const MAX_PASSES = 10;
 const DAY_MINUTES = 24 * 60;
 const SHIFT_WRAP_MINUTES = 12 * 60;
+const IDLE_NUDGE_MINUTES = 2;
 const CHAT_WINDOW = { appId: 'chat', title: 'Chat', size: { width: 900, height: 500 } } as const;
 
 type GameSnapshot = ReturnType<typeof useGameStore.getState>;
+
+interface DartoNudge {
+  threadId: string;
+  message: string;
+  sentFlag: FlagPath;
+}
+
+const TICKET_NUDGE: DartoNudge = {
+  threadId: 'chat_darto_nudge_ticket',
+  message: 'Mas, tiket dari bagas.p tolong dicek dulu.',
+  sentFlag: 'act1.dartoNudgeTicketSent',
+};
+
+const REMOTE_NUDGE: DartoNudge = {
+  threadId: 'chat_darto_nudge_remote',
+  message: 'Mas, printer L4 itu bisa di-remote dari aplikasi Remote.',
+  sentFlag: 'act1.dartoNudgeRemoteSent',
+};
 
 let loadedEvents: GameEvent[] = [];
 const firedOnce = new Set<string>();
 let evaluating = false;
 let pending = false;
+let idleSince = 0;
 
 function toShiftMinutes(time: string): number {
   const match = /^\s*(\d{1,2}):(\d{2})\s*$/.exec(time);
@@ -121,6 +141,48 @@ export function evaluateEvents(_gameState?: GameSnapshot): void {
   }
 }
 
+function hasVisibleWindow(): boolean {
+  return useUiStore.getState().windows.some((w) => !w.isMinimized && !w.isHidden);
+}
+
+function resetIdle(): void {
+  const now = toShiftMinutes(useGameStore.getState().timeCurrent);
+  if (!Number.isNaN(now)) idleSince = now;
+}
+
+function pickNudge(state: GameSnapshot): DartoNudge | null {
+  if (state.act !== 1) return null;
+  const a1 = state.flags.act1;
+  if (!a1.ticket4471Seen) return a1.dartoNudgeTicketSent ? null : TICKET_NUDGE;
+  if (!a1.remoteOpened) return a1.dartoNudgeRemoteSent ? null : REMOTE_NUDGE;
+  return null;
+}
+
+function sendDartoNudge(nudge: DartoNudge): void {
+  console.log(`[EventEngine] NUDGE ${nudge.threadId}`);
+  useGameStore.getState().setFlag(nudge.sentFlag, true as never);
+  useUiStore.getState().unlockChatThread(nudge.threadId);
+  useNotificationStore.getState().addNotification({
+    title: 'Pak Darto',
+    message: nudge.message,
+    appId: 'chat',
+  });
+}
+
+function checkIdle(): void {
+  const state = useGameStore.getState();
+  const now = toShiftMinutes(state.timeCurrent);
+  if (Number.isNaN(now)) return;
+  if (hasVisibleWindow() || now < idleSince) {
+    idleSince = now;
+    return;
+  }
+  if (now - idleSince < IDLE_NUDGE_MINUTES) return;
+  idleSince = now;
+  const nudge = pickNudge(state);
+  if (nudge) sendDartoNudge(nudge);
+}
+
 async function loadEvents(): Promise<GameEvent[]> {
   const response = await fetch(EVENT_DATA_URL);
   if (!response.ok) {
@@ -145,9 +207,16 @@ export function startEventEngine(): () => void {
   firedOnce.clear();
   evaluating = false;
   pending = false;
+  idleSince = 0;
+  resetIdle();
 
-  const unsubscribe = useGameStore.subscribe(() => {
+  const unsubscribeGame = useGameStore.subscribe((state, prev) => {
     evaluateEvents();
+    if (state.timeCurrent !== prev.timeCurrent) checkIdle();
+  });
+
+  const unsubscribeUi = useUiStore.subscribe((state, prev) => {
+    if (state.windows !== prev.windows) resetIdle();
   });
 
   loadEvents()
@@ -163,6 +232,7 @@ export function startEventEngine(): () => void {
 
   return () => {
     cancelled = true;
-    unsubscribe();
+    unsubscribeGame();
+    unsubscribeUi();
   };
 }

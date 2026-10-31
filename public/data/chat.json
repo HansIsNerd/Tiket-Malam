@@ -19,6 +19,22 @@
       ]
     },
     {
+      "id": "chat_darto_nudge_ticket",
+      "contactId": "pak_darto",
+      "locked": true,
+      "messages": [
+        { "time": "22:56", "from": "pak_darto", "text": "Mas, tiket dari bagas.p tolong dicek dulu." }
+      ]
+    },
+    {
+      "id": "chat_darto_nudge_remote",
+      "contactId": "pak_darto",
+      "locked": true,
+      "messages": [
+        { "time": "23:06", "from": "pak_darto", "text": "Mas, printer L4 itu bisa di-remote dari aplikasi Remote." }
+      ]
+    },
+    {
       "id": "chat_darto_gate",
       "contactId": "pak_darto",
       "locked": true,

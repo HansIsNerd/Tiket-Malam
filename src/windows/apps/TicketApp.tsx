@@ -113,6 +113,7 @@ export function TicketApp() {
   const ticketData = useGameStore((s) => s.ticketData);
   const setTicketData = useGameStore((s) => s.setTicketData);
   const playerName = useGameStore((s) => s.playerName);
+  const setFlag = useGameStore((s) => s.setFlag);
   const [activeTicketId, setActiveTicketId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -134,6 +135,11 @@ export function TicketApp() {
     (a, b) => b.number - a.number,
   );
   const activeTicket = tickets.find((t) => t.id === activeTicketId) ?? null;
+  const activeTicketNumber = activeTicket?.number ?? null;
+
+  useEffect(() => {
+    if (activeTicketNumber === 4471) setFlag('act1.ticket4471Seen', true);
+  }, [activeTicketNumber, setFlag]);
 
   const resolveName = (name: string): string =>
     name === 'player' ? playerName : name;

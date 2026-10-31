@@ -20,6 +20,10 @@ export function RemoteApp() {
   const [deniedNotice, setDeniedNotice] = useState<boolean>(false);
 
   useEffect(() => {
+    setFlag('act1.remoteOpened', true);
+  }, [setFlag]);
+
+  useEffect(() => {
     const timer = window.setTimeout(() => setPhase('connected'), CONNECT_DELAY_MS);
     return () => {
       window.clearTimeout(timer);

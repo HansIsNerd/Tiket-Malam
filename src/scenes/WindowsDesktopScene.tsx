@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useGameStore } from '@core/stores/gameStore';
 import { useUiStore } from '@core/stores/uiStore';
 import { loadFileData } from '@core/services/dataLoader';
@@ -9,16 +9,13 @@ import { Desktop } from '@windows/Desktop';
 import { Taskbar } from '@windows/Taskbar';
 import { WindowFrame } from '@windows/WindowFrame';
 import { NotificationSystem } from '@windows/NotificationSystem';
-import { EndScreen } from '@scenes/Endscreen';
-
-const END_SCREEN_DELAY_MS = 5000;
+import { EndScreen } from '@scenes/EndScreen';
 
 export function WindowsDesktopScene() {
   const windows = useUiStore((s) => s.windows);
   const fileData = useGameStore((s) => s.fileData);
   const setFileData = useGameStore((s) => s.setFileData);
   const e10Instruction = useGameStore((s) => s.flags.act2.e10Instruction);
-  const [showEnd, setShowEnd] = useState<boolean>(false);
 
   useEffect(() => {
     if (fileData) return;
@@ -52,14 +49,6 @@ export function WindowsDesktopScene() {
     };
   }, []);
 
-  useEffect(() => {
-    if (!e10Instruction) return;
-    const timer = window.setTimeout(() => setShowEnd(true), END_SCREEN_DELAY_MS);
-    return () => {
-      window.clearTimeout(timer);
-    };
-  }, [e10Instruction]);
-
   return (
     <div className="relative h-full w-full overflow-hidden bg-slate-900 text-neutral-100">
       <Desktop />
@@ -68,7 +57,7 @@ export function WindowsDesktopScene() {
       )}
       <NotificationSystem />
       <Taskbar />
-      {showEnd ? <EndScreen /> : null}
+      {e10Instruction ? <EndScreen /> : null}
     </div>
   );
 }
