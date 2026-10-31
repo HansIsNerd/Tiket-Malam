@@ -114,7 +114,7 @@ export function Desktop() {
             className="group flex h-24 w-24 flex-col items-center justify-center gap-2 rounded-xl text-[11px] text-white"
           >
             <div
-              className={`relative flex h-12 w-12 items-center justify-center rounded-xl shadow-lg shadow-black/60 ring-1 ring-white/10 transition-[filter] duration-200 group-hover:brightness-125 ${tileClass}`}
+              className={`relative flex h-12 w-12 shrink-0 items-center justify-center rounded-xl shadow-lg shadow-black/60 ring-1 ring-white/10 transition-[filter] duration-200 group-hover:brightness-125 ${tileClass}`}
             >
               <Icon size={24} strokeWidth={2} className="text-white" />
               <NotificationBadge count={badges[appId] ?? 0} />
@@ -136,16 +136,16 @@ export function Desktop() {
             whileTap={{ scale: 0.97 }}
             transition={{ type: 'spring', stiffness: 400, damping: 25 }}
             className={cx(
-              'flex h-24 w-24 flex-col items-center justify-center gap-2 rounded-xl px-1 text-[11px] text-white transition-colors',
+              'flex h-24 w-24 flex-col items-center justify-start overflow-hidden rounded-xl px-1 pb-1 pt-2 text-[11px] text-white transition-colors',
               selectedFileId === file.id && 'bg-white/10 ring-1 ring-white/30',
             )}
           >
             <FileText
-              size={40}
+              size={36}
               strokeWidth={1.5}
               className="shrink-0 text-neutral-100 drop-shadow-[0_2px_4px_rgba(0,0,0,0.7)]"
             />
-            <span className="w-full break-all text-center leading-tight [text-shadow:0_1px_2px_rgba(0,0,0,0.8)]">
+            <span className="mt-2 line-clamp-2 w-full break-all text-center text-[11px] leading-[1.25] [text-shadow:0_1px_2px_rgba(0,0,0,0.8)]">
               {file.name}
             </span>
           </motion.button>

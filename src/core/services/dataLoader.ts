@@ -10,11 +10,11 @@ import type { FileData } from '@core/types/files';
 import { DirectoryDataSchema } from '@core/types/directory';
 import type { DirectoryData } from '@core/types/directory';
 
-const CHAT_DATA_URL = '/data/chat.json';
-const TICKET_DATA_URL = '/data/tickets.json';
-const MAIL_DATA_URL = '/data/mail.json';
-const FILE_DATA_URL = '/data/files.json';
-const DIRECTORY_DATA_URL = '/data/directory.json';
+const CHAT_DATA_URL = './data/chat.json';
+const TICKET_DATA_URL = './data/tickets.json';
+const MAIL_DATA_URL = './data/mail.json';
+const FILE_DATA_URL = './data/files.json';
+const DIRECTORY_DATA_URL = './data/directory.json';
 
 export interface GameData {
   chatData: ChatData;
@@ -25,11 +25,16 @@ export interface GameData {
 }
 
 async function fetchJson(url: string): Promise<unknown> {
-  const response = await fetch(url);
-  if (!response.ok) {
-    throw new Error(`Gagal memuat ${url}: HTTP ${response.status}`);
+  try {
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(`Gagal memuat ${url}: HTTP ${response.status}`);
+    }
+    return await response.json();
+  } catch (err: unknown) {
+    console.error(`[dataLoader] Gagal memuat data dari "${url}"`, err);
+    throw err;
   }
-  return response.json();
 }
 
 async function loadValidated<T>(url: string, schema: ZodType<T>): Promise<T> {
@@ -37,10 +42,11 @@ async function loadValidated<T>(url: string, schema: ZodType<T>): Promise<T> {
   const result = schema.safeParse(raw);
 
   if (!result.success) {
+    const details = result.error.issues
+      .map((issue) => `${issue.path.join('.') || '(root)'}: ${issue.message}`)
+      .join('\n');
+    console.error(`[dataLoader] Validasi ${url} gagal:\n${details}`);
     if (import.meta.env.DEV) {
-      const details = result.error.issues
-        .map((issue) => `${issue.path.join('.') || '(root)'}: ${issue.message}`)
-        .join('\n');
       throw new Error(`Validasi ${url} gagal:\n${details}`);
     }
     throw new Error('Data permainan tidak valid');

@@ -5,7 +5,7 @@ import { useUiStore } from '@core/stores/uiStore';
 import { EventDataSchema } from '@core/types/events';
 import type { EventAction, EventCondition, GameEvent } from '@core/types/events';
 
-const EVENT_DATA_URL = '/data/events.json';
+const EVENT_DATA_URL = './data/events.json';
 const MAX_PASSES = 10;
 const DAY_MINUTES = 24 * 60;
 const SHIFT_WRAP_MINUTES = 12 * 60;
@@ -182,16 +182,24 @@ function checkIdle(): void {
 }
 
 async function loadEvents(): Promise<GameEvent[]> {
-  const response = await fetch(EVENT_DATA_URL);
-  if (!response.ok) {
-    throw new Error(`Gagal memuat ${EVENT_DATA_URL}: HTTP ${response.status}`);
+  let raw: unknown;
+  try {
+    const response = await fetch(EVENT_DATA_URL);
+    if (!response.ok) {
+      throw new Error(`Gagal memuat ${EVENT_DATA_URL}: HTTP ${response.status}`);
+    }
+    raw = await response.json();
+  } catch (err: unknown) {
+    console.error(`[EventEngine] Gagal memuat data dari "${EVENT_DATA_URL}"`, err);
+    throw err;
   }
-  const result = EventDataSchema.safeParse(await response.json());
+  const result = EventDataSchema.safeParse(raw);
   if (!result.success) {
+    const details = result.error.issues
+      .map((i) => `${i.path.join('.') || '(root)'}: ${i.message}`)
+      .join('\n');
+    console.error(`[EventEngine] Validasi ${EVENT_DATA_URL} gagal:\n${details}`);
     if (import.meta.env.DEV) {
-      const details = result.error.issues
-        .map((i) => `${i.path.join('.') || '(root)'}: ${i.message}`)
-        .join('\n');
       throw new Error(`Validasi ${EVENT_DATA_URL} gagal:\n${details}`);
     }
     throw new Error('Data permainan tidak valid');
