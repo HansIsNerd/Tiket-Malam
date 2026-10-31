@@ -23,6 +23,53 @@
         },
         { "type": "open_chat_thread", "threadId": "chat_darto_gate" }
       ]
+    },
+    {
+      "id": "e02_log_read",
+      "once": true,
+      "condition": {
+        "type": "and",
+        "conditions": [
+          { "type": "act_is", "act": 2 },
+          { "type": "flag", "path": "act2.e02LogOpened", "value": true }
+        ]
+      },
+      "actions": [
+        { "type": "set_flag", "path": "act2.e02LogRead", "value": true }
+      ]
+    },
+    {
+      "id": "e04_rani_authority",
+      "once": true,
+      "condition": {
+        "type": "and",
+        "conditions": [
+          { "type": "flag", "path": "act2.e02LogRead", "value": true },
+          {
+            "type": "or",
+            "conditions": [
+              { "type": "flag", "path": "act2.e02ScrollCount", "value": 5 },
+              { "type": "flag", "path": "act2.e02ScrollCount", "value": 6 },
+              { "type": "flag", "path": "act2.e02ScrollCount", "value": 7 },
+              { "type": "flag", "path": "act2.e02ScrollCount", "value": 8 },
+              { "type": "flag", "path": "act2.e02ScrollCount", "value": 9 },
+              { "type": "flag", "path": "act2.e02ScrollCount", "value": 10 },
+              { "type": "flag", "path": "act2.e02ScrollCount", "value": 11 }
+            ]
+          }
+        ]
+      },
+      "actions": [
+        {
+          "type": "show_notification",
+          "payload": {
+            "title": "Rani",
+            "message": "Kamu buka log ya?",
+            "appId": "chat"
+          }
+        },
+        { "type": "open_chat_thread", "threadId": "chat_rani_authority" }
+      ]
     }
   ]
 }

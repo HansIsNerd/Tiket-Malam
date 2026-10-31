@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import type { UIEvent } from 'react';
 import { motion } from 'framer-motion';
 import { useGameStore } from '@core/stores/gameStore';
@@ -43,6 +43,11 @@ export function LogApp() {
   const lastAddRef = useRef<number>(0);
   const countRef = useRef<number>(scrollCount);
   countRef.current = scrollCount;
+
+  useEffect(() => {
+    if (useGameStore.getState().flags.act2.e02LogOpened) return;
+    setFlag('act2.e02LogOpened', true);
+  }, [setFlag]);
 
   const normalRows = buildNormalRows(playerName);
   const anomalyRows = Array.from({ length: scrollCount }, () => ANOMALY_ROW);

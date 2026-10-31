@@ -18,6 +18,8 @@ export interface Act1Flags {
 }
 
 export interface Act2Flags {
+  e02LogOpened: boolean;
+  e02LogRead: boolean;
   e02ScrollCount: number;
 }
 
@@ -86,6 +88,8 @@ export const useGameStore = create<GameState>((set) => ({
       act2Gate: false,
     },
     act2: {
+      e02LogOpened: false,
+      e02LogRead: false,
       e02ScrollCount: 0,
     },
     ui: {
