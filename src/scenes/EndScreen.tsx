@@ -1,95 +1,101 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { resetSavedGame } from '@core/stores/gameStore';
+import { useGameStore, resetSavedGame } from '@core/stores/gameStore';
 
-const FADE_IN = { duration: 2, ease: 'easeInOut' } as const;
-const WAIT_MS = 5000;
-const STEP_OFFSETS_MS: readonly number[] = [0, 3000, 4500, 6000, 7500, 9500, 13000];
-const COUNTDOWN: readonly string[] = ['3...', '2...', '1...'];
-const OVERLAY_CLASS =
-  'fixed inset-0 z-[10050] flex flex-col items-center justify-center bg-black text-white';
+const FIRST_LINE_MS = 1500;
+const LINE_GAP_MS = 2000;
+const CURSOR_HOLD_MS = 5000;
+const FADE = { duration: 1.2, ease: 'easeOut' } as const;
+const MONO_STACK = "'Courier New', Courier, Consolas, monospace";
+const DIM = '#7A7A85';
+const BRIGHT = '#C8C8D0';
 
-type Phase = 'wait' | 'message' | 'final';
+interface LogLine {
+  text: string;
+  color: string;
+}
 
-function FadeLine({ children }: { children: string }) {
-  return (
-    <motion.p
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={FADE_IN}
-      className="text-base tracking-wide text-neutral-200"
-    >
-      {children}
-    </motion.p>
-  );
+function buildLines(playerName: string): readonly LogLine[] {
+  return [
+    { text: 'MENGAKHIRI SESI SHIFT MALAM...', color: DIM },
+    { text: 'Menyimpan log akses lantai 4...', color: DIM },
+    { text: 'Peringatan: Log tidak dapat disimpan. Akses ditolak.', color: DIM },
+    { text: `Mengalihkan hak akses pengguna ${playerName}...`, color: DIM },
+    { text: 'Hak akses dicabut.', color: DIM },
+    { text: 'Menunggu pengguna baru...', color: DIM },
+    { text: 'Tiket #4471 telah dialihkan ke: Bagas.p', color: BRIGHT },
+  ];
 }
 
 export function EndScreen() {
-  const [phase, setPhase] = useState<Phase>('wait');
-  const [step, setStep] = useState<number>(0);
+  const playerName = useGameStore((s) => s.playerName);
+  const lines = buildLines(playerName);
+  const [visibleCount, setVisibleCount] = useState<number>(0);
+  const [showButton, setShowButton] = useState<boolean>(false);
 
   useEffect(() => {
-    const timer = window.setTimeout(() => setPhase('message'), WAIT_MS);
-    return () => {
-      window.clearTimeout(timer);
-    };
-  }, []);
-
-  useEffect(() => {
-    if (phase !== 'message') return;
-    const lastIndex = STEP_OFFSETS_MS.length - 1;
-    const timers = STEP_OFFSETS_MS.map((offset, i) =>
-      window.setTimeout(() => {
-        setStep(i + 1);
-        if (i === lastIndex) setPhase('final');
-      }, offset),
-    );
+    const total = buildLines('').length;
+    const timers: number[] = [];
+    for (let i = 0; i < total; i += 1) {
+      timers.push(
+        window.setTimeout(() => setVisibleCount(i + 1), FIRST_LINE_MS + i * LINE_GAP_MS),
+      );
+    }
+    const lastLineAt = FIRST_LINE_MS + (total - 1) * LINE_GAP_MS;
+    timers.push(window.setTimeout(() => setShowButton(true), lastLineAt + CURSOR_HOLD_MS));
     return () => {
       timers.forEach((t) => window.clearTimeout(t));
     };
-  }, [phase]);
+  }, []);
 
   const handleRestart = () => {
     resetSavedGame();
     window.location.reload();
   };
 
-  if (phase === 'wait') return <div aria-hidden="true" className={OVERLAY_CLASS} />;
-
-  if (phase === 'message') {
-    const shown = COUNTDOWN.slice(0, Math.max(0, step - 2));
-    return (
-      <div role="status" aria-live="polite" className={`${OVERLAY_CLASS} gap-6`}>
-        {step >= 1 ? <FadeLine>Kamu telah menyelesaikan Vertical Slice.</FadeLine> : null}
-        {step >= 2 ? (
-          <FadeLine>{`Layar akan mati dalam ${shown.join(' ')}`.trim()}</FadeLine>
-        ) : null}
-        {step >= 6 ? <FadeLine>Terima kasih sudah bermain.</FadeLine> : null}
-      </div>
-    );
-  }
+  const allShown = visibleCount >= lines.length;
 
   return (
-    <motion.div
-      role="dialog"
-      aria-modal="true"
-      aria-label="Akhir demo"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={FADE_IN}
-      className={`${OVERLAY_CLASS} gap-12`}
+    <div
+      role="status"
+      aria-live="polite"
+      className="fixed inset-0 z-[10050] flex flex-col justify-between overflow-hidden bg-[#000000] p-8"
+      style={{ fontFamily: MONO_STACK }}
     >
-      <div className="flex flex-col items-center gap-4">
-        <h1 className="text-6xl font-bold tracking-[0.2em]">TIKET MALAM</h1>
-        <p className="text-sm text-neutral-400">Babak 2 akan datang.</p>
+      <div className="flex flex-col gap-2 text-sm leading-relaxed">
+        {lines.slice(0, visibleCount).map((line, i) => (
+          <motion.p
+            key={i}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={FADE}
+            style={{ color: line.color }}
+          >
+            {line.text}
+          </motion.p>
+        ))}
+        {allShown ? (
+          <span aria-hidden="true" className="end-cursor-blink" style={{ color: DIM }}>
+            _
+          </span>
+        ) : null}
       </div>
-      <button
-        type="button"
-        onClick={handleRestart}
-        className="h-10 border border-neutral-500 bg-transparent px-8 text-xs font-semibold tracking-wider text-neutral-200 transition-colors hover:bg-white/10"
-      >
-        Main Lagi
-      </button>
-    </motion.div>
+
+      <div className="flex h-8 items-end">
+        {showButton ? (
+          <motion.button
+            type="button"
+            onClick={handleRestart}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 1.4, ease: 'easeOut' }}
+            className="border border-[#3a3a41] bg-transparent px-3 py-1.5 text-[11px] tracking-wider transition-colors hover:border-[#7A7A85] hover:text-[#C8C8D0]"
+            style={{ color: DIM, fontFamily: MONO_STACK }}
+          >
+            [ Restart Terminal ]
+          </motion.button>
+        ) : null}
+      </div>
+    </div>
   );
 }

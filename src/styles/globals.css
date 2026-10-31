@@ -37,90 +37,17 @@ body,
   background: transparent;
 }
 
-.crt-scanlines {
-  pointer-events: none;
-  position: absolute;
-  inset: 0;
-  z-index: 10040;
-  opacity: 0;
-  transition: opacity 3s ease-in;
-  background: repeating-linear-gradient(
-    to bottom,
-    rgba(255, 255, 255, 0.05) 0,
-    rgba(255, 255, 255, 0.05) 1px,
-    rgba(0, 0, 0, 0.18) 1px,
-    rgba(0, 0, 0, 0.18) 2px,
-    transparent 2px,
-    transparent 4px
-  );
+.end-cursor-blink {
+  display: inline-block;
+  animation: end-cursor-blink 1s steps(1, end) infinite;
 }
 
-.crt-scanlines-on {
-  opacity: 1;
-  animation: crt-drift 6s linear infinite;
-}
-
-@keyframes crt-drift {
-  from {
-    background-position: 0 0;
-  }
-  to {
-    background-position: 0 16px;
-  }
-}
-
-.glitch-active .whitespace-pre-wrap.break-words {
-  animation: text-flicker 1.7s steps(1, end) infinite;
-}
-
-.glitch-active .whitespace-pre-wrap.break-words:nth-child(even) {
-  animation-duration: 2.3s;
-  animation-delay: 0.4s;
-}
-
-@keyframes text-flicker {
+@keyframes end-cursor-blink {
   0% {
     opacity: 1;
   }
-  8% {
-    opacity: 0.15;
-  }
-  10% {
-    opacity: 1;
-  }
-  27% {
-    opacity: 0.6;
-    text-shadow: 1px 0 rgba(255, 255, 255, 0.5), -1px 0 rgba(255, 255, 255, 0.25);
-  }
-  29% {
-    opacity: 1;
-    text-shadow: none;
-  }
-  46% {
+  50% {
     opacity: 0;
-  }
-  48% {
-    opacity: 0.9;
-  }
-  52% {
-    opacity: 0.2;
-  }
-  54% {
-    opacity: 1;
-  }
-  73% {
-    opacity: 0.4;
-    text-shadow: -2px 0 rgba(255, 255, 255, 0.4);
-  }
-  76% {
-    opacity: 1;
-    text-shadow: none;
-  }
-  91% {
-    opacity: 0.1;
-  }
-  93% {
-    opacity: 1;
   }
   100% {
     opacity: 1;
@@ -128,11 +55,7 @@ body,
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .crt-scanlines-on {
-    animation: none;
-  }
-
-  .glitch-active .whitespace-pre-wrap.break-words {
+  .end-cursor-blink {
     animation: none;
   }
 }

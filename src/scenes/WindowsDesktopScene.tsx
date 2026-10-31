@@ -5,15 +5,13 @@ import { loadFileData } from '@core/services/dataLoader';
 import { startEventEngine } from '@core/services/eventEngine';
 import { startGameClock } from '@core/services/gameClock';
 import { playAmbient, setMasterVolume, stopAmbient } from '@core/services/audioService';
-import { cx } from '@core/utils/cx';
 import { Desktop } from '@windows/Desktop';
 import { Taskbar } from '@windows/Taskbar';
 import { WindowFrame } from '@windows/WindowFrame';
 import { NotificationSystem } from '@windows/NotificationSystem';
 import { EndScreen } from '@scenes/EndScreen';
 
-const GLITCH_DURATION_MS = 5000;
-const GRAYSCALE_FADE_MS = 4000;
+const FADE_OUT_MS = 3000;
 
 export function WindowsDesktopScene() {
   const windows = useUiStore((s) => s.windows);
@@ -59,19 +57,21 @@ export function WindowsDesktopScene() {
       setShowEnd(false);
       return;
     }
-    const timer = window.setTimeout(() => setShowEnd(true), GLITCH_DURATION_MS);
+    stopAmbient(FADE_OUT_MS);
+    const timer = window.setTimeout(() => setShowEnd(true), FADE_OUT_MS);
     return () => {
       window.clearTimeout(timer);
     };
   }, [e10Instruction]);
 
   return (
-    <div className="relative h-full w-full overflow-hidden bg-slate-900 text-neutral-100">
+    <div className="relative h-full w-full overflow-hidden bg-[#000000] text-neutral-100">
       <div
-        className={cx('relative h-full w-full', e10Instruction && 'glitch-active')}
+        className="relative h-full w-full"
         style={{
-          filter: e10Instruction ? 'grayscale(100%)' : 'grayscale(0%)',
-          transition: `filter ${GRAYSCALE_FADE_MS}ms ease-in-out`,
+          opacity: e10Instruction ? 0 : 1,
+          transition: `opacity ${FADE_OUT_MS}ms ease-in-out`,
+          pointerEvents: e10Instruction ? 'none' : 'auto',
         }}
       >
         <Desktop />
@@ -81,10 +81,6 @@ export function WindowsDesktopScene() {
         <NotificationSystem />
         <Taskbar />
       </div>
-      <div
-        aria-hidden="true"
-        className={cx('crt-scanlines', e10Instruction && 'crt-scanlines-on')}
-      />
       {showEnd ? <EndScreen /> : null}
     </div>
   );
