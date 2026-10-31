@@ -35,13 +35,12 @@ export function WindowsDesktopScene() {
   }, [fileData, setFileData]);
 
   useEffect(() => {
-    const stop = startEventEngine();
-    return stop;
-  }, []);
-
-  useEffect(() => {
-    const stop = startGameClock();
-    return stop;
+    const stopEngine = startEventEngine();
+    const stopClock = startGameClock();
+    return () => {
+      stopEngine();
+      stopClock();
+    };
   }, []);
 
   useEffect(() => {

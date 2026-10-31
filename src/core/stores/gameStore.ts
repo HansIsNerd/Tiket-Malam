@@ -78,7 +78,7 @@ interface PersistedGameState {
 }
 
 const SAVE_KEY = 'tiket-malam-save';
-const SAVE_VERSION = 1;
+const SAVE_VERSION = 2;
 
 let persistenceLocked = false;
 
@@ -179,6 +179,7 @@ export const useGameStore = create<GameState>()(
       name: SAVE_KEY,
       version: SAVE_VERSION,
       storage: saveStorage,
+      migrate: () => undefined as unknown as PersistedGameState,
       partialize: (state): PersistedGameState => ({
         playerName: state.playerName,
         act: state.act,
@@ -188,6 +189,7 @@ export const useGameStore = create<GameState>()(
       merge: (persisted, current) => {
         const saved = persisted as Partial<PersistedGameState> | undefined;
         if (!saved) return current;
+        if (saved.flags?.act2?.e10Instruction) return current;
         return {
           ...current,
           playerName: saved.playerName ?? current.playerName,

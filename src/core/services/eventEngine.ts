@@ -16,6 +16,7 @@ type GameSnapshot = ReturnType<typeof useGameStore.getState>;
 let loadedEvents: GameEvent[] = [];
 const firedOnce = new Set<string>();
 let evaluating = false;
+let pending = false;
 
 function toShiftMinutes(time: string): number {
   const match = /^\s*(\d{1,2}):(\d{2})\s*$/.exec(time);
@@ -61,29 +62,6 @@ function checkCondition(state: GameSnapshot, cond: EventCondition): boolean {
   }
 }
 
-function debugLog(state: GameSnapshot, event: GameEvent, result: boolean): void {
-  const logRead = readFlag(state, 'act2.e02LogRead');
-  const logOpened = readFlag(state, 'act2.e02LogOpened');
-  const bagasContact = readFlag(state, 'act2.e09BagasContact');
-  const currentTime = state.timeCurrent;
-
-  if (event.id === 'e09_bagas_contact') {
-    console.log(
-      `[EventEngine] Check E09: LogRead=${String(logRead)}, Time=${currentTime}, Target=23:18, Act=${state.act}, Result=${String(result)}`,
-    );
-    return;
-  }
-  if (event.id === 'e10_bagas_instruction') {
-    console.log(
-      `[EventEngine] Check E10: BagasContact=${String(bagasContact)}, Time=${currentTime}, Target=23:20, Act=${state.act}, Result=${String(result)}`,
-    );
-    return;
-  }
-  console.log(
-    `[EventEngine] Check ${event.id}: LogOpened=${String(logOpened)}, LogRead=${String(logRead)}, Time=${currentTime}, Act=${state.act}, Result=${String(result)}`,
-  );
-}
-
 function runAction(action: EventAction): void {
   const game = useGameStore.getState();
   switch (action.type) {
@@ -110,31 +88,36 @@ function runAction(action: EventAction): void {
   }
 }
 
-export function evaluateEvents(gameState: GameSnapshot): void {
-  if (evaluating || loadedEvents.length === 0) return;
+export function evaluateEvents(_gameState?: GameSnapshot): void {
+  if (loadedEvents.length === 0) return;
+  if (evaluating) {
+    pending = true;
+    return;
+  }
   evaluating = true;
   try {
-    const firedThisCall = new Set<string>();
-    let state = gameState;
-    for (let pass = 0; pass < MAX_PASSES; pass += 1) {
-      let firedAny = false;
-      for (const event of loadedEvents) {
-        if (firedThisCall.has(event.id)) continue;
-        if (event.once && firedOnce.has(event.id)) continue;
-        const passed = checkCondition(state, event.condition);
-        debugLog(state, event, passed);
-        if (!passed) continue;
-        console.log(`[EventEngine] FIRE ${event.id}`);
-        firedThisCall.add(event.id);
-        if (event.once) firedOnce.add(event.id);
-        event.actions.forEach(runAction);
-        firedAny = true;
-        state = useGameStore.getState();
+    do {
+      pending = false;
+      const firedThisCall = new Set<string>();
+      for (let pass = 0; pass < MAX_PASSES; pass += 1) {
+        let firedAny = false;
+        for (const event of loadedEvents) {
+          if (firedThisCall.has(event.id)) continue;
+          if (event.once && firedOnce.has(event.id)) continue;
+          const state = useGameStore.getState();
+          if (!checkCondition(state, event.condition)) continue;
+          console.log(`[EventEngine] FIRE ${event.id}`);
+          firedThisCall.add(event.id);
+          if (event.once) firedOnce.add(event.id);
+          event.actions.forEach(runAction);
+          firedAny = true;
+        }
+        if (!firedAny) break;
       }
-      if (!firedAny) break;
-    }
+    } while (pending);
   } finally {
     evaluating = false;
+    pending = false;
   }
 }
 
@@ -159,8 +142,12 @@ async function loadEvents(): Promise<GameEvent[]> {
 export function startEventEngine(): () => void {
   let cancelled = false;
 
-  const unsubscribe = useGameStore.subscribe((state) => {
-    evaluateEvents(state);
+  firedOnce.clear();
+  evaluating = false;
+  pending = false;
+
+  const unsubscribe = useGameStore.subscribe(() => {
+    evaluateEvents();
   });
 
   loadEvents()
@@ -168,10 +155,10 @@ export function startEventEngine(): () => void {
       if (cancelled) return;
       loadedEvents = events;
       console.log(`[EventEngine] Loaded ${events.length} events`);
-      evaluateEvents(useGameStore.getState());
+      evaluateEvents();
     })
     .catch((err: unknown) => {
-      console.warn(err);
+      console.error(err);
     });
 
   return () => {

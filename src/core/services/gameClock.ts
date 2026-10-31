@@ -12,14 +12,16 @@ function formatMinutes(total: number): string {
 
 function parseMinutes(time: string): number {
   const [h, m] = time.split(':').map(Number);
-  return (h ?? 0) * 60 + (m ?? 0);
+  return (Number.isFinite(h) ? (h as number) : 0) * 60 + (Number.isFinite(m) ? (m as number) : 0);
 }
 
 export function startGameClock(): () => void {
   const timer = window.setInterval(() => {
     const state = useGameStore.getState();
     if (state.flags.act2.e10Instruction) return;
-    state.setTime(formatMinutes(parseMinutes(state.timeCurrent) + 1));
+    const next = formatMinutes(parseMinutes(state.timeCurrent) + 1);
+    console.log(`[GameClock] ${state.timeCurrent} -> ${next}`);
+    state.setTime(next);
   }, TICK_MS);
 
   return () => {
