@@ -1,5 +1,4 @@
 import { create } from 'zustand';
-// import { playSFX } from '@core/services/audioService';
 
 export interface AppNotification {
   id: string;
@@ -34,7 +33,6 @@ export const useNotificationStore = create<NotificationState>((set) => ({
         { id, title: input.title, message: input.message, appId: input.appId },
       ],
     }));
-    // playSFX('notification');
     return id;
   },
 

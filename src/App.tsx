@@ -1,7 +1,6 @@
 import { useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useUiStore } from '@core/stores/uiStore';
-import { useGameStore } from '@core/stores/gameStore';
 import { startEventEngine } from '@core/services/eventEngine';
 import { startGameClock } from '@core/services/gameClock';
 import { ContentWarningScene } from '@scenes/ContentWarningScene';
@@ -28,7 +27,6 @@ function renderScene(scene: string) {
 
 export default function App() {
   const scene = useUiStore((s) => s.scene);
-  const time = useGameStore((s) => s.timeCurrent);
   const content = renderScene(scene);
 
   useEffect(() => {
@@ -45,10 +43,6 @@ export default function App() {
       stopClock();
     };
   }, [scene]);
-
-  useEffect(() => {
-    console.log('[App] Scene:', scene, 'Time:', time);
-  }, [scene, time]);
 
   return (
     <div className="h-screen w-screen overflow-hidden bg-black">

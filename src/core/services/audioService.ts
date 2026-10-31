@@ -44,8 +44,8 @@ export function stopAmbient(fadeMs: number = AMBIENT_FADE_OUT_MS): void {
   }, fadeMs);
 }
 
-export function playSFX(soundName: string): void {
-  console.log(`[Audio] Mencoba memutar SFX: ${soundName} (file belum ada)`);
+export function playSFX(_soundName: string): void {
+  // SFX belum tersedia.
 }
 
 export function setMasterVolume(volume: number): void {

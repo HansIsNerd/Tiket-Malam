@@ -126,7 +126,6 @@ export function evaluateEvents(_gameState?: GameSnapshot): void {
           if (event.once && firedOnce.has(event.id)) continue;
           const state = useGameStore.getState();
           if (!checkCondition(state, event.condition)) continue;
-          console.log(`[EventEngine] FIRE ${event.id}`);
           firedThisCall.add(event.id);
           if (event.once) firedOnce.add(event.id);
           event.actions.forEach(runAction);
@@ -159,7 +158,6 @@ function pickNudge(state: GameSnapshot): DartoNudge | null {
 }
 
 function sendDartoNudge(nudge: DartoNudge): void {
-  console.log(`[EventEngine] NUDGE ${nudge.threadId}`);
   useGameStore.getState().setFlag(nudge.sentFlag, true as never);
   useUiStore.getState().unlockChatThread(nudge.threadId);
   useNotificationStore.getState().addNotification({
@@ -223,7 +221,6 @@ export function startEventEngine(): () => void {
     .then((events) => {
       if (cancelled) return;
       loadedEvents = events;
-      console.log(`[EventEngine] Loaded ${events.length} events`);
       evaluateEvents();
     })
     .catch((err: unknown) => {

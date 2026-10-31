@@ -2,18 +2,32 @@ import { useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import { Circle, MessageSquare, Send } from 'lucide-react';
 import { useGameStore } from '@core/stores/gameStore';
+import type { Act2Flags } from '@core/stores/gameStore';
 import { useUiStore } from '@core/stores/uiStore';
 import { loadChatData } from '@core/services/dataLoader';
 import { cx } from '@core/utils/cx';
 
+const TYPING_MS = 4500;
+
+const FLAG_GATED_THREADS: Record<string, (a: Act2Flags) => boolean> = {
+  chat_bagas_1: (a) => a.e09BagasContact,
+  chat_bagas_2: (a) => a.e10Instruction,
+};
+
+const deliveredThreadIds = new Set<string>();
+
+const DOT_DELAYS_MS = [0, 200, 400] as const;
+
 export function ChatApp() {
   const chatData = useGameStore((s) => s.chatData);
   const setChatData = useGameStore((s) => s.setChatData);
+  const act2 = useGameStore((s) => s.flags.act2);
   const unlockedThreadIds = useUiStore((s) => s.unlockedChatThreadIds);
   const pendingThreadId = useUiStore((s) => s.pendingChatThreadId);
   const clearPendingThread = useUiStore((s) => s.clearPendingChatThread);
   const [activeContactId, setActiveContactId] = useState<string | null>(null);
   const [draft, setDraft] = useState<string>('');
+  const [, setDeliveredVersion] = useState<number>(0);
   const bottomRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -45,18 +59,42 @@ export function ChatApp() {
 
   const contacts = chatData?.contacts ?? [];
   const activeContact = contacts.find((c) => c.id === activeContactId) ?? null;
-  const contactThreads = (chatData?.threads ?? []).filter(
-    (t) =>
-      t.contactId === activeContactId &&
-      (t.locked !== true || unlockedThreadIds.includes(t.id)),
-  );
-  const messages = contactThreads.flatMap((t) => t.messages);
-  const disabledThread = contactThreads.find((t) => t.inputDisabled === true) ?? null;
+  const contactThreads = (chatData?.threads ?? []).filter((t) => {
+    if (t.contactId !== activeContactId) return false;
+    if (t.locked !== true) return true;
+    if (unlockedThreadIds.includes(t.id)) return true;
+    return FLAG_GATED_THREADS[t.id]?.(act2) === true;
+  });
+
+  const typingThread =
+    contactThreads.find(
+      (t) => FLAG_GATED_THREADS[t.id] !== undefined && !deliveredThreadIds.has(t.id),
+    ) ?? null;
+  const typingThreadId = typingThread?.id ?? null;
+  const typingIndex = typingThread ? contactThreads.indexOf(typingThread) : -1;
+  const visibleThreads = typingIndex < 0 ? contactThreads : contactThreads.slice(0, typingIndex);
+
+  const messages = visibleThreads.flatMap((t) => t.messages);
+  const disabledThread =
+    [...visibleThreads, ...(typingThread ? [typingThread] : [])].find(
+      (t) => t.inputDisabled === true,
+    ) ?? null;
   const isInputDisabled = disabledThread !== null;
 
   useEffect(() => {
+    if (typingThreadId === null) return;
+    const timer = window.setTimeout(() => {
+      deliveredThreadIds.add(typingThreadId);
+      setDeliveredVersion((v) => v + 1);
+    }, TYPING_MS);
+    return () => {
+      window.clearTimeout(timer);
+    };
+  }, [typingThreadId]);
+
+  useEffect(() => {
     bottomRef.current?.scrollIntoView({ block: 'end' });
-  }, [activeContactId, messages.length]);
+  }, [activeContactId, messages.length, typingThreadId]);
 
   const handleSelectContact = (id: string) => {
     setActiveContactId(id);
@@ -117,7 +155,7 @@ export function ChatApp() {
             </header>
 
             <div className="chat-scroll flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto px-4 py-4">
-              {messages.length === 0 ? (
+              {messages.length === 0 && typingThread === null ? (
                 <p className="m-auto text-sm text-neutral-500">
                   Belum ada pesan
                 </p>
@@ -156,6 +194,26 @@ export function ChatApp() {
                   );
                 })
               )}
+              {typingThread !== null ? (
+                <div
+                  role="status"
+                  aria-live="polite"
+                  className="flex w-full justify-start"
+                >
+                  <div className="flex items-center gap-2 rounded-2xl rounded-bl-sm bg-[var(--os-panel-hover)] px-3 py-2 text-xs text-neutral-400">
+                    <span className="flex items-center gap-1" aria-hidden="true">
+                      {DOT_DELAYS_MS.map((delay) => (
+                        <span
+                          key={delay}
+                          className="h-1.5 w-1.5 animate-pulse rounded-full bg-neutral-400"
+                          style={{ animationDelay: `${delay}ms`, animationDuration: '1.2s' }}
+                        />
+                      ))}
+                    </span>
+                    <span>{`${activeContact.displayName} sedang mengetik...`}</span>
+                  </div>
+                </div>
+              ) : null}
               <div ref={bottomRef} />
             </div>
 

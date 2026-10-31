@@ -26,9 +26,7 @@ export function useGameClock(): void {
   useEffect(() => {
     const interval = window.setInterval(() => {
       const { timeCurrent, setTime } = useGameStore.getState();
-      const newTime = addOneMinute(timeCurrent);
-      console.log(`[GameClock] Waktu berubah menjadi: ${newTime}`);
-      setTime(newTime);
+      setTime(addOneMinute(timeCurrent));
     }, TICK_MS);
 
     return () => {

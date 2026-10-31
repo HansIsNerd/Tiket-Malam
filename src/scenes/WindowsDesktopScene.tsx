@@ -11,6 +11,7 @@ import { WindowFrame } from '@windows/WindowFrame';
 import { NotificationSystem } from '@windows/NotificationSystem';
 import { EndScreen } from '@scenes/EndScreen';
 
+const SILENCE_MS = 10000;
 const FADE_OUT_MS = 3000;
 
 export function WindowsDesktopScene() {
@@ -18,6 +19,7 @@ export function WindowsDesktopScene() {
   const fileData = useGameStore((s) => s.fileData);
   const setFileData = useGameStore((s) => s.setFileData);
   const e10Instruction = useGameStore((s) => s.flags.act2.e10Instruction);
+  const [fading, setFading] = useState<boolean>(false);
   const [showEnd, setShowEnd] = useState<boolean>(false);
 
   useEffect(() => {
@@ -54,13 +56,18 @@ export function WindowsDesktopScene() {
 
   useEffect(() => {
     if (!e10Instruction) {
+      setFading(false);
       setShowEnd(false);
       return;
     }
-    stopAmbient(FADE_OUT_MS);
-    const timer = window.setTimeout(() => setShowEnd(true), FADE_OUT_MS);
+    const fadeTimer = window.setTimeout(() => {
+      setFading(true);
+      stopAmbient(FADE_OUT_MS);
+    }, SILENCE_MS);
+    const endTimer = window.setTimeout(() => setShowEnd(true), SILENCE_MS + FADE_OUT_MS);
     return () => {
-      window.clearTimeout(timer);
+      window.clearTimeout(fadeTimer);
+      window.clearTimeout(endTimer);
     };
   }, [e10Instruction]);
 
@@ -69,9 +76,9 @@ export function WindowsDesktopScene() {
       <div
         className="relative h-full w-full"
         style={{
-          opacity: e10Instruction ? 0 : 1,
+          opacity: fading ? 0 : 1,
           transition: `opacity ${FADE_OUT_MS}ms ease-in-out`,
-          pointerEvents: e10Instruction ? 'none' : 'auto',
+          pointerEvents: fading ? 'none' : 'auto',
         }}
       >
         <Desktop />
