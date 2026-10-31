@@ -93,7 +93,6 @@ export function StartMenu() {
     setFlag('act1.playerTriedToQuit', true);
     setConfirmOpen(false);
     closeMenu();
-    console.log(QUIT_MESSAGE);
     setToast(QUIT_MESSAGE);
   };
 

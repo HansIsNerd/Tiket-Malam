@@ -18,8 +18,12 @@ const firedOnce = new Set<string>();
 let evaluating = false;
 
 function toShiftMinutes(time: string): number {
-  const [h, m] = time.split(':').map(Number);
-  const total = (h ?? 0) * 60 + (m ?? 0);
+  const match = /^\s*(\d{1,2}):(\d{2})\s*$/.exec(time);
+  if (!match) {
+    console.warn(`[EventEngine] Format waktu tidak valid: "${time}"`);
+    return Number.NaN;
+  }
+  const total = Number(match[1]) * 60 + Number(match[2]);
   return total < SHIFT_WRAP_MINUTES ? total + DAY_MINUTES : total;
 }
 
@@ -40,8 +44,12 @@ function checkCondition(state: GameSnapshot, cond: EventCondition): boolean {
       if (cond.value === undefined) return Boolean(current);
       return current === cond.value;
     }
-    case 'time_after':
-      return toShiftMinutes(state.timeCurrent) >= toShiftMinutes(cond.time);
+    case 'time_after': {
+      const now = toShiftMinutes(state.timeCurrent);
+      const target = toShiftMinutes(cond.time);
+      if (Number.isNaN(now) || Number.isNaN(target)) return false;
+      return now >= target;
+    }
     case 'act_is':
       return state.act === cond.act;
     case 'and':
@@ -51,6 +59,29 @@ function checkCondition(state: GameSnapshot, cond: EventCondition): boolean {
     case 'not':
       return !checkCondition(state, cond.condition);
   }
+}
+
+function debugLog(state: GameSnapshot, event: GameEvent, result: boolean): void {
+  const logRead = readFlag(state, 'act2.e02LogRead');
+  const logOpened = readFlag(state, 'act2.e02LogOpened');
+  const bagasContact = readFlag(state, 'act2.e09BagasContact');
+  const currentTime = state.timeCurrent;
+
+  if (event.id === 'e09_bagas_contact') {
+    console.log(
+      `[EventEngine] Check E09: LogRead=${String(logRead)}, Time=${currentTime}, Target=23:18, Act=${state.act}, Result=${String(result)}`,
+    );
+    return;
+  }
+  if (event.id === 'e10_bagas_instruction') {
+    console.log(
+      `[EventEngine] Check E10: BagasContact=${String(bagasContact)}, Time=${currentTime}, Target=23:20, Act=${state.act}, Result=${String(result)}`,
+    );
+    return;
+  }
+  console.log(
+    `[EventEngine] Check ${event.id}: LogOpened=${String(logOpened)}, LogRead=${String(logRead)}, Time=${currentTime}, Act=${state.act}, Result=${String(result)}`,
+  );
 }
 
 function runAction(action: EventAction): void {
@@ -90,7 +121,10 @@ export function evaluateEvents(gameState: GameSnapshot): void {
       for (const event of loadedEvents) {
         if (firedThisCall.has(event.id)) continue;
         if (event.once && firedOnce.has(event.id)) continue;
-        if (!checkCondition(state, event.condition)) continue;
+        const passed = checkCondition(state, event.condition);
+        debugLog(state, event, passed);
+        if (!passed) continue;
+        console.log(`[EventEngine] FIRE ${event.id}`);
         firedThisCall.add(event.id);
         if (event.once) firedOnce.add(event.id);
         event.actions.forEach(runAction);
@@ -133,6 +167,7 @@ export function startEventEngine(): () => void {
     .then((events) => {
       if (cancelled) return;
       loadedEvents = events;
+      console.log(`[EventEngine] Loaded ${events.length} events`);
       evaluateEvents(useGameStore.getState());
     })
     .catch((err: unknown) => {

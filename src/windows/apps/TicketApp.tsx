@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Ticket as TicketIcon } from 'lucide-react';
 import { useGameStore } from '@core/stores/gameStore';
+import { useUiStore } from '@core/stores/uiStore';
 import { loadTicketData } from '@core/services/dataLoader';
 import type { Ticket, TicketPriority } from '@core/types/tickets';
 import { cx } from '@core/utils/cx';
@@ -10,6 +11,8 @@ const PRIORITY_LABEL: Record<TicketPriority, string> = {
   medium: 'Sedang',
   high: 'Tinggi',
 };
+
+const REMOTE_WINDOW = { appId: 'remote', title: 'Remote', size: { width: 860, height: 520 } } as const;
 
 const ACTION_BTN =
   'h-8 border border-neutral-500 bg-transparent px-4 text-xs font-semibold tracking-wider text-neutral-200 transition-colors hover:bg-white/10';
@@ -36,6 +39,7 @@ interface TicketActionsProps {
 function TicketActions({ ticket }: TicketActionsProps) {
   const closeClicked = useGameStore((s) => s.flags.act1.ticket4471CloseClicked);
   const setFlag = useGameStore((s) => s.setFlag);
+  const openWindow = useUiStore((s) => s.openWindow);
   const [dialogOpen, setDialogOpen] = useState<boolean>(false);
 
   const isSpecial = ticket.closeButtonDisappears === true;
@@ -55,7 +59,7 @@ function TicketActions({ ticket }: TicketActionsProps) {
   };
 
   const handleRemote = () => {
-    console.log('Trigger Remote App');
+    openWindow({ ...REMOTE_WINDOW });
   };
 
   return (
