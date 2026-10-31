@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { Accessibility, ArrowRight, Power, Wifi } from 'lucide-react';
 import { useGameStore } from '@core/stores/gameStore';
 import { loadAllData } from '@core/services/dataLoader';
+import { audioService } from '@core/services/audioService';
 
 const WALLPAPER_URL =
   'https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80&w=1920';
@@ -46,6 +47,7 @@ export function BootScene() {
 
   const startLogin = () => {
     if (isLoading) return;
+    audioService.playAmbient();
     setIsLoading(true);
     timerRef.current = window.setTimeout(() => {
       completeBoot();
