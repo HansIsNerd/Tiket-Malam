@@ -22,6 +22,7 @@ export interface Act2Flags {
   e02LogOpened: boolean;
   e02LogRead: boolean;
   e02ScrollCount: number;
+  e04RaniAuthority: boolean;
   e09BagasContact: boolean;
   e10Instruction: boolean;
 }
@@ -142,6 +143,7 @@ export const useGameStore = create<GameState>()(
           e02LogOpened: false,
           e02LogRead: false,
           e02ScrollCount: 0,
+          e04RaniAuthority: false,
           e09BagasContact: false,
           e10Instruction: false,
         },

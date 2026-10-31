@@ -1,6 +1,7 @@
 {
   "contacts": [
     { "id": "pak_darto", "displayName": "Pak Darto", "status": "online" },
+    { "id": "rani", "displayName": "Rani", "status": "online" },
     { "id": "bagas_p", "displayName": "bagas.p", "status": "offline" }
   ],
   "threads": [
@@ -23,6 +24,15 @@
       "locked": true,
       "messages": [
         { "time": "23:25", "from": "pak_darto", "text": "Mas, jangan naik." }
+      ]
+    },
+    {
+      "id": "chat_rani_authority",
+      "contactId": "rani",
+      "locked": true,
+      "messages": [
+        { "time": "23:14", "from": "rani", "text": "Kamu buka log ya?" },
+        { "time": "23:15", "from": "rani", "text": "Log lantai 4 itu arsip. Jangan diutak-atik." }
       ]
     },
     {

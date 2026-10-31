@@ -37,6 +37,8 @@ export function ChatApp() {
     if (target) {
       setActiveContactId(target.contactId);
       setDraft('');
+    } else {
+      console.warn(`[ChatApp] Thread tidak ditemukan: ${pendingThreadId}`);
     }
     clearPendingThread();
   }, [pendingThreadId, chatData, clearPendingThread]);
