@@ -70,6 +70,52 @@
         },
         { "type": "open_chat_thread", "threadId": "chat_rani_authority" }
       ]
+    },
+    {
+      "id": "e09_bagas_contact",
+      "once": true,
+      "condition": {
+        "type": "and",
+        "conditions": [
+          { "type": "flag", "path": "act2.e02LogRead", "value": true },
+          { "type": "time_after", "time": "23:18" }
+        ]
+      },
+      "actions": [
+        { "type": "set_flag", "path": "act2.e09BagasContact", "value": true },
+        {
+          "type": "show_notification",
+          "payload": {
+            "title": "bagas.p",
+            "message": "Kamu buka log 03:00.",
+            "appId": "chat"
+          }
+        },
+        { "type": "open_chat_thread", "threadId": "chat_bagas_1" }
+      ]
+    },
+    {
+      "id": "e10_bagas_instruction",
+      "once": true,
+      "condition": {
+        "type": "and",
+        "conditions": [
+          { "type": "flag", "path": "act2.e09BagasContact", "value": true },
+          { "type": "time_after", "time": "23:20" }
+        ]
+      },
+      "actions": [
+        { "type": "set_flag", "path": "act2.e10Instruction", "value": true },
+        {
+          "type": "show_notification",
+          "payload": {
+            "title": "bagas.p",
+            "message": "Kamu telat 11 bulan.",
+            "appId": "chat"
+          }
+        },
+        { "type": "open_chat_thread", "threadId": "chat_bagas_2" }
+      ]
     }
   ]
 }

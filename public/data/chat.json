@@ -23,8 +23,19 @@
     {
       "id": "chat_bagas_1",
       "contactId": "bagas_p",
+      "locked": true,
       "messages": [
         { "time": "23:18", "from": "bagas_p", "text": "Kamu buka log 03:00." }
+      ],
+      "inputDisabled": true,
+      "inputDisabledReason": "Tidak dapat membalas"
+    },
+    {
+      "id": "chat_bagas_2",
+      "contactId": "bagas_p",
+      "locked": true,
+      "messages": [
+        { "time": "23:20", "from": "bagas_p", "text": "Kamu telat 11 bulan." }
       ],
       "inputDisabled": true,
       "inputDisabledReason": "Tidak dapat membalas"

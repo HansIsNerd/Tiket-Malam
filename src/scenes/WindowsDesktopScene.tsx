@@ -3,6 +3,7 @@ import { useGameStore } from '@core/stores/gameStore';
 import { useUiStore } from '@core/stores/uiStore';
 import { loadFileData } from '@core/services/dataLoader';
 import { startEventEngine } from '@core/services/eventEngine';
+import { startGameClock } from '@core/services/gameClock';
 import { Desktop } from '@windows/Desktop';
 import { Taskbar } from '@windows/Taskbar';
 import { WindowFrame } from '@windows/WindowFrame';
@@ -30,6 +31,11 @@ export function WindowsDesktopScene() {
 
   useEffect(() => {
     const stop = startEventEngine();
+    return stop;
+  }, []);
+
+  useEffect(() => {
+    const stop = startGameClock();
     return stop;
   }, []);
 

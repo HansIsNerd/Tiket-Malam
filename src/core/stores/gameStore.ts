@@ -21,6 +21,8 @@ export interface Act2Flags {
   e02LogOpened: boolean;
   e02LogRead: boolean;
   e02ScrollCount: number;
+  e09BagasContact: boolean;
+  e10Instruction: boolean;
 }
 
 export interface UiFlags {
@@ -91,6 +93,8 @@ export const useGameStore = create<GameState>((set) => ({
       e02LogOpened: false,
       e02LogRead: false,
       e02ScrollCount: 0,
+      e09BagasContact: false,
+      e10Instruction: false,
     },
     ui: {
       desktopTheme: 'light',
