@@ -9,6 +9,7 @@ import type {
 const DEFAULT_SIZE = { width: 480, height: 320 };
 const CASCADE_BASE = 80;
 const CASCADE_STEP = 30;
+const DEFAULT_VOLUME = 60;
 
 export type TrayMenu = 'quick_settings' | 'calendar' | null;
 
@@ -23,7 +24,9 @@ interface UiState {
   pendingChatThreadId: string | null;
   acknowledgedMailIds: string[];
   seenChatThreadIds: string[];
+  volume: number;
   setScene: (scene: Scene) => void;
+  setVolume: (volume: number) => void;
   openWindow: (input: OpenWindowInput) => void;
   closeWindow: (id: string) => void;
   focusWindow: (id: string) => void;
@@ -67,8 +70,11 @@ export const useUiStore = create<UiState>((set, get) => ({
   pendingChatThreadId: null,
   acknowledgedMailIds: [],
   seenChatThreadIds: [],
+  volume: DEFAULT_VOLUME,
 
   setScene: (scene) => set({ scene }),
+
+  setVolume: (volume) => set({ volume: Math.min(100, Math.max(0, volume)) }),
 
   openWindow: (input) => {
     const existing = get().windows.find((w) => w.appId === input.appId);

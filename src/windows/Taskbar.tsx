@@ -7,12 +7,14 @@ import {
   Plane,
   Sun,
   Volume2,
+  VolumeX,
   Wifi,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useGameStore } from '@core/stores/gameStore';
 import { useUiStore } from '@core/stores/uiStore';
 import { useAppBadges, useBadgeAcknowledge } from '@core/hooks/useAppBadges';
+import { setMasterVolume } from '@core/services/audioService';
 import { cx } from '@core/utils/cx';
 import { getAppMeta } from '@windows/appRegistry';
 import { NotificationBadge } from '@windows/NotificationBadge';
@@ -74,10 +76,18 @@ function QuickSettingsPopup() {
     airplane: false,
     night: false,
   });
-  const [volume, setVolume] = useState<number>(60);
+  const volume = useUiStore((s) => s.volume);
+  const setVolume = useUiStore((s) => s.setVolume);
   const [brightness, setBrightness] = useState<number>(80);
 
   const flip = (key: string) => setToggles((prev) => ({ ...prev, [key]: !prev[key] }));
+
+  const handleVolume = (value: number) => {
+    setVolume(value);
+    setMasterVolume(value);
+  };
+
+  const VolumeIcon = volume === 0 ? VolumeX : Volume2;
 
   return (
     <motion.div {...POPUP_MOTION} className={POPUP_CLASS}>
@@ -105,13 +115,13 @@ function QuickSettingsPopup() {
 
       <div className="mt-4 flex flex-col gap-4">
         <label className="flex items-center gap-3 text-neutral-300">
-          <Volume2 size={16} strokeWidth={1.75} className="shrink-0" />
+          <VolumeIcon size={16} strokeWidth={1.75} className="shrink-0" />
           <input
             type="range"
             min={0}
             max={100}
             value={volume}
-            onChange={(e) => setVolume(Number(e.target.value))}
+            onChange={(e) => handleVolume(Number(e.target.value))}
             aria-label="Volume"
             className="h-1 w-full cursor-pointer accent-blue-500"
           />
@@ -197,9 +207,12 @@ export function Taskbar() {
   const setTrayMenu = useUiStore((s) => s.setTrayMenu);
   const isStartMenuOpen = useUiStore((s) => s.isStartMenuOpen);
   const toggleStartMenu = useUiStore((s) => s.toggleStartMenu);
+  const volume = useUiStore((s) => s.volume);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const badges = useAppBadges();
   useBadgeAcknowledge();
+
+  const TrayVolumeIcon = volume === 0 ? VolumeX : Volume2;
 
   const handleAppClick = (id: string, isFocused: boolean, isMinimized: boolean) => {
     if (isMinimized) {
@@ -305,7 +318,7 @@ export function Taskbar() {
             )}
           >
             <Wifi size={14} strokeWidth={1.75} />
-            <Volume2 size={14} strokeWidth={1.75} />
+            <TrayVolumeIcon size={14} strokeWidth={1.75} />
             <Battery size={14} strokeWidth={1.75} />
           </button>
           <button
