@@ -21,6 +21,8 @@ interface UiState {
   isStartMenuOpen: boolean;
   unlockedChatThreadIds: string[];
   pendingChatThreadId: string | null;
+  acknowledgedMailIds: string[];
+  seenChatThreadIds: string[];
   setScene: (scene: Scene) => void;
   openWindow: (input: OpenWindowInput) => void;
   closeWindow: (id: string) => void;
@@ -34,6 +36,8 @@ interface UiState {
   toggleStartMenu: () => void;
   unlockChatThread: (threadId: string) => void;
   clearPendingChatThread: () => void;
+  acknowledgeMails: (ids: string[]) => void;
+  markChatThreadsSeen: (ids: string[]) => void;
 }
 
 function pickTopId(windows: WindowInstance[], excludeId: string): string | null {
@@ -47,6 +51,11 @@ function withFocus(windows: WindowInstance[], focusId: string | null): WindowIns
   return windows.map((w) => ({ ...w, isFocused: w.id === focusId }));
 }
 
+function mergeIds(current: string[], incoming: string[]): string[] {
+  const missing = incoming.filter((id) => !current.includes(id));
+  return missing.length === 0 ? current : [...current, ...missing];
+}
+
 export const useUiStore = create<UiState>((set, get) => ({
   scene: 'boot',
   windows: [],
@@ -56,6 +65,8 @@ export const useUiStore = create<UiState>((set, get) => ({
   isStartMenuOpen: false,
   unlockedChatThreadIds: [],
   pendingChatThreadId: null,
+  acknowledgedMailIds: [],
+  seenChatThreadIds: [],
 
   setScene: (scene) => set({ scene }),
 
@@ -184,4 +195,16 @@ export const useUiStore = create<UiState>((set, get) => ({
     })),
 
   clearPendingChatThread: () => set({ pendingChatThreadId: null }),
+
+  acknowledgeMails: (ids) =>
+    set((state) => {
+      const next = mergeIds(state.acknowledgedMailIds, ids);
+      return next === state.acknowledgedMailIds ? state : { acknowledgedMailIds: next };
+    }),
+
+  markChatThreadsSeen: (ids) =>
+    set((state) => {
+      const next = mergeIds(state.seenChatThreadIds, ids);
+      return next === state.seenChatThreadIds ? state : { seenChatThreadIds: next };
+    }),
 }));

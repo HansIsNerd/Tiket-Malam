@@ -1,6 +1,13 @@
 {
   "files": [
     {
+      "id": "file_panduan_shift",
+      "name": "panduan_shift.txt",
+      "type": "text",
+      "location": "desktop",
+      "content": "PANDUAN SHIFT MALAM\n\nSelamat datang di shift malam. Tugas Anda:\n1. Cek aplikasi Ticket untuk melihat keluhan karyawan.\n2. Jika ada kendala IT, buka Remote Desktop.\n3. Jangan pernah ke lantai 4 setelah jam 12 malam.\n\n- IT Support"
+    },
+    {
       "id": "file_catatan_shift",
       "name": "catatan_shift.txt",
       "type": "text",

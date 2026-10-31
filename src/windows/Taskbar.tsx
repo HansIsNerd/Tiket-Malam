@@ -12,8 +12,10 @@ import {
 import type { LucideIcon } from 'lucide-react';
 import { useGameStore } from '@core/stores/gameStore';
 import { useUiStore } from '@core/stores/uiStore';
+import { useAppBadges, useBadgeAcknowledge } from '@core/hooks/useAppBadges';
 import { cx } from '@core/utils/cx';
 import { getAppMeta } from '@windows/appRegistry';
+import { NotificationBadge } from '@windows/NotificationBadge';
 import { StartMenu } from '@windows/StartMenu';
 
 const FAKE_TODAY = new Date(2025, 10, 2);
@@ -196,6 +198,8 @@ export function Taskbar() {
   const isStartMenuOpen = useUiStore((s) => s.isStartMenuOpen);
   const toggleStartMenu = useUiStore((s) => s.toggleStartMenu);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
+  const badges = useAppBadges();
+  useBadgeAcknowledge();
 
   const handleAppClick = (id: string, isFocused: boolean, isMinimized: boolean) => {
     if (isMinimized) {
@@ -276,6 +280,7 @@ export function Taskbar() {
                     )}
                   >
                     {Icon ? <Icon size={20} strokeWidth={1.5} /> : null}
+                    <NotificationBadge count={badges[win.appId] ?? 0} />
                     <span
                       className={cx(
                         'absolute bottom-[3px] h-[3px] rounded-full transition-all duration-200',

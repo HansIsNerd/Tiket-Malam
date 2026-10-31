@@ -1,6 +1,14 @@
 {
   "mails": [
     {
+      "id": "mail_hrd_welcome",
+      "from": "HRD Nusa Data <hrd@nusadata.co.id>",
+      "subject": "Selamat Datang di Shift Malam",
+      "time": "22:40",
+      "body": "Halo {PLAYER},\n\nSelamat bekerja di shift malam Anda. Pastikan Anda mengecek tiket secara berkala dan membaca panduan shift yang ada di desktop.\n\nJangan ragu untuk menghubungi Pak Darto (Security) jika ada kendala.",
+      "unread": true
+    },
+    {
       "id": "mail_sari_offboarding",
       "from": "Sari Wulandari (HR)",
       "subject": "Pengingat — Berita Acara Offboarding",

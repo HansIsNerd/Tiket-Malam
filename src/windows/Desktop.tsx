@@ -1,11 +1,13 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { FileText, X } from 'lucide-react';
 import { useGameStore } from '@core/stores/gameStore';
 import { useUiStore } from '@core/stores/uiStore';
+import { useAppBadges } from '@core/hooks/useAppBadges';
 import type { FileItem } from '@core/types/files';
 import { cx } from '@core/utils/cx';
 import { APPS } from '@windows/appRegistry';
+import { NotificationBadge } from '@windows/NotificationBadge';
 
 const WALLPAPER_URL =
   'https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80&w=1920';
@@ -25,13 +27,25 @@ const ACT_GATED_APPS: Record<string, number> = {
   log: LOG_VISIBLE_FROM_ACT,
 };
 
+const DESKTOP_FILE_ORDER: readonly string[] = ['file_panduan_shift', 'file_catatan_shift'];
+
 export function Desktop() {
   const openWindow = useUiStore((s) => s.openWindow);
   const act = useGameStore((s) => s.act);
+  const fileData = useGameStore((s) => s.fileData);
+  const badges = useAppBadges();
   const [openFile, setOpenFile] = useState<FileItem | null>(null);
+  const [selectedFileId, setSelectedFileId] = useState<string | null>(null);
 
   const visibleApps = APPS.filter((app) => act >= (ACT_GATED_APPS[app.appId] ?? 1));
   const isDark = act >= 2;
+
+  const desktopFiles: FileItem[] = useMemo(() => {
+    const all = fileData?.files ?? [];
+    return DESKTOP_FILE_ORDER.map((id) => all.find((f) => f.id === id)).filter(
+      (f): f is FileItem => f !== undefined && (f.location ?? 'desktop') === 'desktop',
+    );
+  }, [fileData]);
 
   return (
     <div className="absolute inset-x-0 top-0 bottom-12">
@@ -62,11 +76,40 @@ export function Desktop() {
             className="group flex h-24 w-24 flex-col items-center justify-center gap-2 rounded-xl text-[11px] text-white"
           >
             <div
-              className={`flex h-12 w-12 items-center justify-center rounded-xl shadow-lg shadow-black/60 ring-1 ring-white/10 transition-[filter] duration-200 group-hover:brightness-125 ${tileClass}`}
+              className={`relative flex h-12 w-12 items-center justify-center rounded-xl shadow-lg shadow-black/60 ring-1 ring-white/10 transition-[filter] duration-200 group-hover:brightness-125 ${tileClass}`}
             >
               <Icon size={24} strokeWidth={2} className="text-white" />
+              <NotificationBadge count={badges[appId] ?? 0} />
             </div>
             <span className="[text-shadow:0_1px_2px_rgba(0,0,0,0.8)]">{title}</span>
+          </motion.button>
+        ))}
+
+        {desktopFiles.map((file) => (
+          <motion.button
+            key={file.id}
+            type="button"
+            title={file.name}
+            onClick={() => {
+              setSelectedFileId(file.id);
+              setOpenFile(file);
+            }}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.97 }}
+            transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+            className={cx(
+              'flex h-24 w-24 flex-col items-center justify-center gap-2 rounded-xl px-1 text-[11px] text-white transition-colors',
+              selectedFileId === file.id && 'bg-white/10 ring-1 ring-white/30',
+            )}
+          >
+            <FileText
+              size={40}
+              strokeWidth={1.5}
+              className="shrink-0 text-neutral-100 drop-shadow-[0_2px_4px_rgba(0,0,0,0.7)]"
+            />
+            <span className="w-full break-all text-center leading-tight [text-shadow:0_1px_2px_rgba(0,0,0,0.8)]">
+              {file.name}
+            </span>
           </motion.button>
         ))}
       </div>

@@ -9,7 +9,12 @@
       "contactId": "pak_darto",
       "messages": [
         { "time": "22:49", "from": "pak_darto", "text": "Sendirian, Mas?" },
-        { "time": "22:50", "from": "player", "text": "Iya Pak. Shift terakhir." }
+        { "time": "22:50", "from": "player", "text": "Iya Pak. Shift terakhir." },
+        {
+          "time": "22:51",
+          "from": "pak_darto",
+          "text": "Kopi di pantri masih anget. Ambil gih. Tapi sebelum itu, cek tiket dulu, ada yang ngantri tuh."
+        }
       ]
     },
     {
