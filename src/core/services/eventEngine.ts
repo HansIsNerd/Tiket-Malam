@@ -10,6 +10,7 @@ const MAX_PASSES = 10;
 const DAY_MINUTES = 24 * 60;
 const SHIFT_WRAP_MINUTES = 12 * 60;
 const IDLE_NUDGE_MINUTES = 2;
+const SCREEN_SHARING_SELECTOR = 'button[aria-label="Screen Sharing"]';
 const CHAT_WINDOW = { appId: 'chat', title: 'Chat', size: { width: 900, height: 500 } } as const;
 
 type GameSnapshot = ReturnType<typeof useGameStore.getState>;
@@ -218,6 +219,14 @@ function checkIdle(): void {
   if (nudge) sendDartoNudge(nudge);
 }
 
+function handleScreenSharingClick(e: MouseEvent): void {
+  const target = e.target;
+  if (!(target instanceof Element)) return;
+  if (target.closest(SCREEN_SHARING_SELECTOR) === null) return;
+  if (!useGameStore.getState().flags.mac.ssIconActive) return;
+  useUiStore.getState().setScene('macos');
+}
+
 async function loadEvents(): Promise<GameEvent[]> {
   const response = await fetch(EVENT_DATA_URL);
   if (!response.ok) {
@@ -254,6 +263,8 @@ export function startEventEngine(): () => void {
     if (state.windows !== prev.windows) resetIdle();
   });
 
+  document.addEventListener('click', handleScreenSharingClick);
+
   loadEvents()
     .then((events) => {
       if (cancelled) return;
@@ -268,5 +279,6 @@ export function startEventEngine(): () => void {
     cancelled = true;
     unsubscribeGame();
     unsubscribeUi();
+    document.removeEventListener('click', handleScreenSharingClick);
   };
 }

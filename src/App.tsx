@@ -8,6 +8,7 @@ import { ContentWarningScene } from '@scenes/ContentWarningScene';
 import { MainMenuScene } from '@scenes/MainMenuScene';
 import { BootScene } from '@scenes/BootScene';
 import { WindowsDesktopScene } from '@scenes/WindowsDesktopScene';
+import { MacOSScene } from '@scenes/MacOSScene';
 
 const SCENE_TRANSITION = { duration: 0.5, ease: 'easeInOut' } as const;
 
@@ -21,6 +22,8 @@ function renderScene(scene: string) {
       return <BootScene />;
     case 'windows':
       return <WindowsDesktopScene />;
+    case 'macos':
+      return <MacOSScene />;
     default:
       return null;
   }

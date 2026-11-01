@@ -7,17 +7,35 @@ import type {
 } from '@core/types';
 
 const DEFAULT_SIZE = { width: 480, height: 320 };
+const MAC_DEFAULT_SIZE = { width: 640, height: 420 };
 const CASCADE_BASE = 80;
 const CASCADE_STEP = 30;
+const MAC_CASCADE_BASE = 70;
+const MAC_CASCADE_STEP = 28;
 const DEFAULT_VOLUME = 60;
 
 export type TrayMenu = 'quick_settings' | 'calendar' | null;
 
+export interface MacWindowInstance {
+  id: string;
+  appId: string;
+  title: string;
+  position: Position;
+  size: { width: number; height: number };
+  isMinimized: boolean;
+  isMaximized: boolean;
+  isFocused: boolean;
+  zIndex: number;
+}
+
 interface UiState {
   scene: Scene;
   windows: WindowInstance[];
+  macWindows: MacWindowInstance[];
   focusedWindowId: string | null;
+  focusedMacWindowId: string | null;
   nextZIndex: number;
+  nextMacZIndex: number;
   activeTrayMenu: TrayMenu;
   isStartMenuOpen: boolean;
   unlockedChatThreadIds: string[];
@@ -35,6 +53,12 @@ interface UiState {
   restoreWindow: (id: string) => void;
   toggleMaximizeWindow: (id: string) => void;
   hideWindow: (id: string) => void;
+  openMacWindow: (input: OpenWindowInput) => void;
+  closeMacWindow: (id: string) => void;
+  focusMacWindow: (id: string) => void;
+  moveMacWindow: (id: string, position: Position) => void;
+  minimizeMacWindow: (id: string) => void;
+  toggleMaximizeMacWindow: (id: string) => void;
   setTrayMenu: (menu: TrayMenu) => void;
   toggleStartMenu: () => void;
   unlockChatThread: (threadId: string) => void;
@@ -54,6 +78,17 @@ function withFocus(windows: WindowInstance[], focusId: string | null): WindowIns
   return windows.map((w) => ({ ...w, isFocused: w.id === focusId }));
 }
 
+function pickTopMacId(windows: MacWindowInstance[], excludeId: string): string | null {
+  const top = windows
+    .filter((w) => w.id !== excludeId && !w.isMinimized)
+    .sort((a, b) => b.zIndex - a.zIndex)[0];
+  return top ? top.id : null;
+}
+
+function withMacFocus(windows: MacWindowInstance[], focusId: string | null): MacWindowInstance[] {
+  return windows.map((w) => ({ ...w, isFocused: w.id === focusId }));
+}
+
 function mergeIds(current: string[], incoming: string[]): string[] {
   const missing = incoming.filter((id) => !current.includes(id));
   return missing.length === 0 ? current : [...current, ...missing];
@@ -62,8 +97,11 @@ function mergeIds(current: string[], incoming: string[]): string[] {
 export const useUiStore = create<UiState>((set, get) => ({
   scene: 'warning',
   windows: [],
+  macWindows: [],
   focusedWindowId: null,
+  focusedMacWindowId: null,
   nextZIndex: 1,
+  nextMacZIndex: 1,
   activeTrayMenu: null,
   isStartMenuOpen: false,
   unlockedChatThreadIds: [],
@@ -179,6 +217,84 @@ export const useUiStore = create<UiState>((set, get) => ({
       const topId = pickTopId(next, id);
       return { windows: withFocus(next, topId), focusedWindowId: topId };
     }),
+
+  openMacWindow: (input) => {
+    const existing = get().macWindows.find((w) => w.appId === input.appId);
+    if (existing) {
+      get().focusMacWindow(existing.id);
+      return;
+    }
+
+    set((state) => {
+      const offset = MAC_CASCADE_BASE + (state.macWindows.length % 8) * MAC_CASCADE_STEP;
+      const created: MacWindowInstance = {
+        id: input.appId,
+        appId: input.appId,
+        title: input.title,
+        position: input.position ?? { x: offset + 60, y: offset },
+        size: input.size ?? MAC_DEFAULT_SIZE,
+        isMinimized: false,
+        isMaximized: false,
+        isFocused: true,
+        zIndex: state.nextMacZIndex,
+      };
+      return {
+        macWindows: [
+          ...state.macWindows.map((w) => ({ ...w, isFocused: false })),
+          created,
+        ],
+        focusedMacWindowId: created.id,
+        nextMacZIndex: state.nextMacZIndex + 1,
+      };
+    });
+  },
+
+  closeMacWindow: (id) =>
+    set((state) => {
+      const remaining = state.macWindows.filter((w) => w.id !== id);
+      if (state.focusedMacWindowId !== id) return { macWindows: remaining };
+      const topId = pickTopMacId(remaining, id);
+      return {
+        macWindows: withMacFocus(remaining, topId),
+        focusedMacWindowId: topId,
+      };
+    }),
+
+  focusMacWindow: (id) =>
+    set((state) => {
+      if (!state.macWindows.some((w) => w.id === id)) return state;
+      return {
+        macWindows: state.macWindows.map((w) =>
+          w.id === id
+            ? { ...w, isFocused: true, isMinimized: false, zIndex: state.nextMacZIndex }
+            : { ...w, isFocused: false },
+        ),
+        focusedMacWindowId: id,
+        nextMacZIndex: state.nextMacZIndex + 1,
+      };
+    }),
+
+  moveMacWindow: (id, position) =>
+    set((state) => ({
+      macWindows: state.macWindows.map((w) => (w.id === id ? { ...w, position } : w)),
+    })),
+
+  minimizeMacWindow: (id) =>
+    set((state) => {
+      const next = state.macWindows.map((w) =>
+        w.id === id ? { ...w, isMinimized: true, isFocused: false } : w,
+      );
+      if (state.focusedMacWindowId !== id) return { macWindows: next };
+      const topId = pickTopMacId(next, id);
+      return { macWindows: withMacFocus(next, topId), focusedMacWindowId: topId };
+    }),
+
+  toggleMaximizeMacWindow: (id) =>
+    set((state) => ({
+      macWindows: state.macWindows.map((w) =>
+        w.id === id ? { ...w, isMaximized: !w.isMaximized } : w,
+      ),
+    })),
 
   setTrayMenu: (menu) =>
     set((state) => ({
