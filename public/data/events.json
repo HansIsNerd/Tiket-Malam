@@ -78,6 +78,51 @@
       ]
     },
     {
+      "id": "e06_cctv_chair",
+      "once": true,
+      "condition": {
+        "type": "and",
+        "conditions": [
+          { "type": "flag", "path": "act1.act2Gate", "value": true },
+          { "type": "flag", "path": "act2.cctvOpened", "value": true },
+          { "type": "not", "condition": { "type": "flag", "path": "act2.e06CctvChair", "value": true } }
+        ]
+      },
+      "actions": [
+        { "type": "set_flag", "path": "act2.e06CctvChair", "value": true },
+        { "type": "mark_time", "path": "act2.e06CctvChairAt" }
+      ]
+    },
+    {
+      "id": "e07_cctv_silhouette",
+      "once": true,
+      "condition": {
+        "type": "and",
+        "conditions": [
+          { "type": "flag", "path": "act2.e06CctvChair", "value": true },
+          { "type": "not", "condition": { "type": "flag", "path": "act2.e07CctvSilhouette", "value": true } }
+        ]
+      },
+      "actions": [
+        { "type": "set_flag", "path": "act2.e07CctvSilhouette", "value": true }
+      ]
+    },
+    {
+      "id": "e08_cctv_darto_static",
+      "once": true,
+      "condition": {
+        "type": "and",
+        "conditions": [
+          { "type": "flag", "path": "act2.e06CctvChair", "value": true },
+          { "type": "minutes_since", "path": "act2.e06CctvChairAt", "minutes": 3 },
+          { "type": "not", "condition": { "type": "flag", "path": "act2.e08CctvDartoStatic", "value": true } }
+        ]
+      },
+      "actions": [
+        { "type": "set_flag", "path": "act2.e08CctvDartoStatic", "value": true }
+      ]
+    },
+    {
       "id": "e09_bagas_contact",
       "once": true,
       "condition": {

@@ -31,6 +31,11 @@ export interface Act2Flags {
   e09BagasContact: boolean;
   e09At: number;
   e10Instruction: boolean;
+  cctvOpened: boolean;
+  e06CctvChair: boolean;
+  e06CctvChairAt: number;
+  e07CctvSilhouette: boolean;
+  e08CctvDartoStatic: boolean;
 }
 
 export interface UiFlags {
@@ -161,6 +166,11 @@ export const useGameStore = create<GameState>()(
           e09BagasContact: false,
           e09At: 0,
           e10Instruction: false,
+          cctvOpened: false,
+          e06CctvChair: false,
+          e06CctvChairAt: 0,
+          e07CctvSilhouette: false,
+          e08CctvDartoStatic: false,
         },
         ui: {
           desktopTheme: 'light',

@@ -19,12 +19,15 @@ const WINDOW_SIZES: Record<string, { width: number; height: number }> = {
   directory: { width: 820, height: 480 },
   remote: { width: 860, height: 520 },
   log: { width: 760, height: 440 },
+  cctv: { width: 880, height: 560 },
 };
 
 // Ubah ke 2 saat Log hanya boleh muncul di Babak 2.
 const LOG_VISIBLE_FROM_ACT = 1;
+const CCTV_VISIBLE_FROM_ACT = 2;
 const ACT_GATED_APPS: Record<string, number> = {
   log: LOG_VISIBLE_FROM_ACT,
+  cctv: CCTV_VISIBLE_FROM_ACT,
 };
 
 const DESKTOP_FILE_ORDER: readonly string[] = ['file_panduan_shift', 'file_catatan_shift'];

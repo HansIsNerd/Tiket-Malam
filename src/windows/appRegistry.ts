@@ -6,6 +6,7 @@ import {
   Monitor,
   Ticket,
   Users,
+  Video,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
@@ -58,6 +59,12 @@ export const APPS: readonly AppMeta[] = [
     title: 'Directory',
     icon: Users,
     tileClass: 'bg-gradient-to-br from-[#D0605A] to-[#963430]',
+  },
+  {
+    appId: 'cctv',
+    title: 'CCTV',
+    icon: Video,
+    tileClass: 'bg-gradient-to-br from-[#5A6068] to-[#2B2F35]',
   },
 ];
 

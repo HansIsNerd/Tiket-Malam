@@ -15,6 +15,7 @@ import { FileExplorerApp } from '@windows/apps/FileExplorerApp';
 import { DirectoryApp } from '@windows/apps/DirectoryApp';
 import { RemoteApp } from '@windows/apps/RemoteApp';
 import { LogApp } from '@windows/apps/LogApp';
+import { CctvApp } from '@windows/apps/CctvApp';
 
 interface WindowFrameProps {
   window: WindowInstance;
@@ -44,6 +45,8 @@ function renderApp(appId: string) {
       return <RemoteApp />;
     case 'log':
       return <LogApp />;
+    case 'cctv':
+      return <CctvApp />;
     case 'dummy':
     default:
       return <DummyApp />;

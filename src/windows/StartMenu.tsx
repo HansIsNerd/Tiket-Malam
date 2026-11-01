@@ -13,6 +13,11 @@ const WINDOW_SIZES: Record<string, { width: number; height: number }> = {
   directory: { width: 820, height: 480 },
   remote: { width: 860, height: 520 },
   log: { width: 760, height: 440 },
+  cctv: { width: 880, height: 560 },
+};
+
+const ACT_GATED_APPS: Record<string, number> = {
+  cctv: 2,
 };
 
 const TOAST_MS = 3500;
@@ -54,6 +59,7 @@ export function StartMenu() {
   const isOpen = useUiStore((s) => s.isStartMenuOpen);
   const openWindow = useUiStore((s) => s.openWindow);
   const playerName = useGameStore((s) => s.playerName);
+  const act = useGameStore((s) => s.act);
   const setFlag = useGameStore((s) => s.setFlag);
 
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -75,7 +81,9 @@ export function StartMenu() {
   const closeMenu = () => useUiStore.setState({ isStartMenuOpen: false });
 
   const query = searchQuery.trim().toLowerCase();
-  const apps = APPS.filter((a) => a.title.toLowerCase().includes(query));
+  const apps = APPS.filter(
+    (a) => act >= (ACT_GATED_APPS[a.appId] ?? 1) && a.title.toLowerCase().includes(query),
+  );
   const initial = (playerName.trim().charAt(0) || '?').toUpperCase();
 
   const handleLaunch = (appId: string, title: string) => {
