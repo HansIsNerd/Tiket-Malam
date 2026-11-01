@@ -1,6 +1,6 @@
 import { useGameStore } from '@core/stores/gameStore';
 
-const TICK_MS = 4000;
+const TICK_MS = 5000;
 const DAY_MINUTES = 24 * 60;
 
 function formatMinutes(total: number): string {

@@ -88,11 +88,10 @@
           "type": "show_notification",
           "payload": {
             "title": "bagas.p",
-            "message": "Kamu buka log 03:00.",
+            "message": "bagas.p sedang mengetik...",
             "appId": "chat"
           }
-        },
-        { "type": "open_chat_thread", "threadId": "chat_bagas_1" }
+        }
       ]
     },
     {
@@ -102,7 +101,7 @@
         "type": "and",
         "conditions": [
           { "type": "flag", "path": "act2.e09BagasContact", "value": true },
-          { "type": "time_after", "time": "23:20" }
+          { "type": "time_after", "time": "23:30" }
         ]
       },
       "actions": [
@@ -111,11 +110,10 @@
           "type": "show_notification",
           "payload": {
             "title": "bagas.p",
-            "message": "Kamu telat 11 bulan.",
+            "message": "bagas.p sedang mengetik...",
             "appId": "chat"
           }
-        },
-        { "type": "open_chat_thread", "threadId": "chat_bagas_2" }
+        }
       ]
     }
   ]
