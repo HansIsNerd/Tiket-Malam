@@ -9,11 +9,12 @@ export const MailAttachmentSchema = z.object({
 
 export const MailSchema = z.object({
   id: z.string().min(1),
-  from: z.string().min(1),
-  subject: z.string().min(1),
+  from: z.string(),
+  subject: z.string(),
   time: z.string().regex(TIME_PATTERN, 'Format waktu harus HH:MM'),
   body: z.string().min(1),
   unread: z.boolean(),
+  minAct: z.number().int().min(1).max(3).optional(),
   attachments: z.array(MailAttachmentSchema).optional(),
 });
 

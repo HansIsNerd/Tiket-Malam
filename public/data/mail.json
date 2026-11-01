@@ -1,6 +1,33 @@
 {
   "mails": [
     {
+      "id": "mail_sari_konfirmasi",
+      "from": "Sari Wulandari (HR)",
+      "subject": "Konfirmasi Penerimaan Dokumen",
+      "time": "03:00",
+      "body": "Dokumen offboarding Bagas sudah kami terima.",
+      "unread": true,
+      "minAct": 3
+    },
+    {
+      "id": "mail_rani_jangan_lapor",
+      "from": "Rani",
+      "subject": "Jangan lapor",
+      "time": "03:00",
+      "body": "Saya tahu kamu masih di sana. Jangan lapor. Jangan hapus. Pulang saja. Kalau kamu lapor, kamu tidak akan percaya apa yang terjadi.",
+      "unread": true,
+      "minAct": 3
+    },
+    {
+      "id": "mail_tanpa_pengirim",
+      "from": "",
+      "subject": "",
+      "time": "03:00",
+      "body": "hr_pusat@nusadata.co.id",
+      "unread": true,
+      "minAct": 3
+    },
+    {
       "id": "mail_hrd_welcome",
       "from": "HRD Nusa Data <hrd@nusadata.co.id>",
       "subject": "Selamat Datang di Shift Malam",

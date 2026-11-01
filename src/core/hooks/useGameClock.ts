@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { useGameStore } from '@core/stores/gameStore';
 
 const TICK_MS = 1000;
+const CLOCK_STOP_ACT = 3;
 
 function pad(value: number): string {
   return String(value).padStart(2, '0');
@@ -25,7 +26,11 @@ export function addOneMinute(time: string): string {
 export function useGameClock(): void {
   useEffect(() => {
     const interval = window.setInterval(() => {
-      const { timeCurrent, setTime } = useGameStore.getState();
+      const { act, timeCurrent, setTime } = useGameStore.getState();
+      if (act >= CLOCK_STOP_ACT) {
+        window.clearInterval(interval);
+        return;
+      }
       const newTime = addOneMinute(timeCurrent);
       console.log(`[GameClock] Waktu berubah menjadi: ${newTime}`);
       setTime(newTime);

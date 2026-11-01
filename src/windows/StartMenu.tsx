@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { Power, Search } from 'lucide-react';
 import { useGameStore } from '@core/stores/gameStore';
 import { useUiStore } from '@core/stores/uiStore';
+import { triggerEnding } from '@core/services/endingService';
 import { APPS } from '@windows/appRegistry';
 
 const WINDOW_SIZES: Record<string, { width: number; height: number }> = {
@@ -20,6 +21,7 @@ const ACT_GATED_APPS: Record<string, number> = {
   cctv: 2,
 };
 
+const ENDING_KELUAR_FROM_ACT = 3;
 const TOAST_MS = 3500;
 const QUIT_MESSAGE = 'Sistem menolak perintah. Shift belum selesai.';
 const BTN =
@@ -101,6 +103,12 @@ export function StartMenu() {
     setFlag('act1.playerTriedToQuit', true);
     setConfirmOpen(false);
     closeMenu();
+    // >>> START PATCH
+    if (useGameStore.getState().act >= ENDING_KELUAR_FROM_ACT) {
+      triggerEnding('keluar');
+      return;
+    }
+    // <<< END PATCH
     setToast(QUIT_MESSAGE);
   };
 
@@ -199,6 +207,7 @@ export function StartMenu() {
                 <button
                   type="button"
                   aria-label="Keluar"
+                  title="Keluar (Shut Down)"
                   onClick={() => setConfirmOpen(true)}
                   className="flex items-center justify-center rounded-md text-neutral-200 transition-colors hover:bg-white/10"
                   style={{ width: 36, height: 36 }}

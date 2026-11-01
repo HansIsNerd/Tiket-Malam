@@ -4,6 +4,7 @@ import { useGameStore } from '@core/stores/gameStore';
 
 const PROMPT = 'bagas@MacBook-Bagas ~ %';
 const FONT_FAMILY = '"SF Mono", SFMono-Regular, Menlo, Monaco, "Courier New", monospace';
+const BAGAS_LAST_COMMAND = 'sudo kill 0340';
 
 interface TerminalLine {
   id: number;
@@ -15,6 +16,12 @@ const PS_OUTPUT: readonly string[] = [
   'USER      PID  %CPU %MEM      VSZ    RSS   TT  STAT STARTED      TIME COMMAND',
   'bagas.p   0340   0.0  0.0  4296732   1204   ??  Ss   3:00AM   0:00.00 /usr/local/bin/proses_0300',
   'bagas    41872   0.0  0.0  4268320    808 s000  S+   3:41AM   0:00.00 grep 03',
+];
+
+const HELP_OUTPUT: readonly string[] = [
+  'help: tidak ada manual untuk perintah ini.',
+  'Riwayat terakhir bagas:',
+  `  ${BAGAS_LAST_COMMAND}`,
 ];
 
 const HISTORY_COMMANDS: readonly string[] = [
@@ -86,6 +93,8 @@ export function MacTerminalApp() {
         return [];
       case 'clear':
         return 'clear';
+      case 'help':
+        return [...HELP_OUTPUT];
       case 'ps aux | grep 03':
         setFlag('mac.psAuxRun', true);
         return [...PS_OUTPUT];
@@ -126,6 +135,7 @@ export function MacTerminalApp() {
     setCursor(null);
   };
 
+  // >>> START PATCH
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       submit();
@@ -133,23 +143,24 @@ export function MacTerminalApp() {
     }
     if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') return;
     e.preventDefault();
-    if (past.length === 0) return;
+    const history = [BAGAS_LAST_COMMAND, ...past];
     if (e.key === 'ArrowUp') {
-      const idx = cursor === null ? past.length - 1 : Math.max(0, cursor - 1);
+      const idx = cursor === null ? history.length - 1 : Math.max(0, cursor - 1);
       setCursor(idx);
-      setInput(past[idx] ?? '');
+      setInput(history[idx] ?? '');
       return;
     }
     if (cursor === null) return;
     const idx = cursor + 1;
-    if (idx >= past.length) {
+    if (idx >= history.length) {
       setCursor(null);
       setInput('');
     } else {
       setCursor(idx);
-      setInput(past[idx] ?? '');
+      setInput(history[idx] ?? '');
     }
   };
+  // <<< END PATCH
 
   return (
     <div

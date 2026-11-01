@@ -9,6 +9,7 @@ import { MainMenuScene } from '@scenes/MainMenuScene';
 import { BootScene } from '@scenes/BootScene';
 import { WindowsDesktopScene } from '@scenes/WindowsDesktopScene';
 import { MacOSScene } from '@scenes/MacOSScene';
+import { EndingScene } from '@scenes/EndingScene';
 
 const SCENE_TRANSITION = { duration: 0.5, ease: 'easeInOut' } as const;
 
@@ -24,6 +25,8 @@ function renderScene(scene: string) {
       return <WindowsDesktopScene />;
     case 'macos':
       return <MacOSScene />;
+    case 'ending':
+      return <EndingScene />;
     default:
       return null;
   }

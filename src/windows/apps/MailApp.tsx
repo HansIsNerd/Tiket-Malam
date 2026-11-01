@@ -22,6 +22,16 @@ const FOLDERS: readonly FolderMeta[] = [
 ];
 
 const OFFBOARDING_PDF = 'berita_acara_bagas.pdf';
+const NO_SENDER_LABEL = '(Tanpa Pengirim)';
+const NO_SUBJECT_LABEL = '(Tanpa Subjek)';
+
+function senderOf(mail: Mail): string {
+  return mail.from.trim() === '' ? NO_SENDER_LABEL : mail.from;
+}
+
+function subjectOf(mail: Mail): string {
+  return mail.subject.trim() === '' ? NO_SUBJECT_LABEL : mail.subject;
+}
 
 interface OffboardingPdfProps {
   playerName: string;
@@ -118,6 +128,7 @@ export function MailApp() {
   const mailData = useGameStore((s) => s.mailData);
   const setMailData = useGameStore((s) => s.setMailData);
   const playerName = useGameStore((s) => s.playerName);
+  const act = useGameStore((s) => s.act);
   const signedOffboarding = useGameStore((s) => s.flags.act1.signedOffboarding);
   const setFlag = useGameStore((s) => s.setFlag);
   const [activeFolder, setActiveFolder] = useState<FolderId>('inbox');
@@ -140,14 +151,18 @@ export function MailApp() {
     };
   }, [mailData, setMailData]);
 
+  const actMails: Mail[] = useMemo(
+    () => (mailData?.mails ?? []).filter((m) => (m.minAct ?? 1) <= act),
+    [mailData, act],
+  );
   const mails: Mail[] = useMemo(
-    () => (activeFolder === 'inbox' ? (mailData?.mails ?? []) : []),
-    [activeFolder, mailData],
+    () => (activeFolder === 'inbox' ? actMails : []),
+    [activeFolder, actMails],
   );
   const selected = mails.find((m) => m.id === selectedId) ?? null;
   const attachments = selected?.attachments ?? [];
   const isUnread = (m: Mail) => m.unread && !readIds.has(m.id);
-  const inboxUnread = (mailData?.mails ?? []).filter(isUnread).length;
+  const inboxUnread = actMails.filter(isUnread).length;
 
   const handleSelectFolder = (id: FolderId) => {
     setActiveFolder(id);
@@ -221,9 +236,10 @@ export function MailApp() {
                           className={cx(
                             'truncate text-sm',
                             unread ? 'font-bold text-neutral-100' : 'text-neutral-300',
+                            mail.from.trim() === '' && 'italic text-neutral-500',
                           )}
                         >
-                          {mail.from}
+                          {senderOf(mail)}
                         </span>
                         <span className="shrink-0 text-[11px] tabular-nums text-neutral-500">
                           {mail.time}
@@ -233,9 +249,10 @@ export function MailApp() {
                         className={cx(
                           'truncate text-xs',
                           unread ? 'font-bold text-neutral-200' : 'text-neutral-400',
+                          mail.subject.trim() === '' && 'italic text-neutral-500',
                         )}
                       >
-                        {mail.subject}
+                        {subjectOf(mail)}
                       </span>
                     </span>
                   </button>
@@ -255,9 +272,9 @@ export function MailApp() {
         ) : (
           <>
             <header className="flex shrink-0 flex-col gap-1 border-b border-[var(--os-border)] bg-[var(--os-panel)] px-5 py-4">
-              <h2 className="text-base font-semibold">{selected.subject}</h2>
+              <h2 className="text-base font-semibold">{subjectOf(selected)}</h2>
               <p className="text-xs text-neutral-400">
-                {selected.from} · {selected.time}
+                {senderOf(selected)} · {selected.time}
               </p>
             </header>
             <div className="chat-scroll min-h-0 flex-1 overflow-y-auto px-5 py-4">

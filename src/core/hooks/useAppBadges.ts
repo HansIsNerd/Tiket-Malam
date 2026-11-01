@@ -7,13 +7,14 @@ export type AppBadges = Record<string, number>;
 export function useAppBadges(): AppBadges {
   const mailData = useGameStore((s) => s.mailData);
   const chatData = useGameStore((s) => s.chatData);
+  const act = useGameStore((s) => s.act);
   const acknowledgedMailIds = useUiStore((s) => s.acknowledgedMailIds);
   const unlockedThreadIds = useUiStore((s) => s.unlockedChatThreadIds);
   const seenThreadIds = useUiStore((s) => s.seenChatThreadIds);
 
   return useMemo(() => {
     const mail = (mailData?.mails ?? []).filter(
-      (m) => m.unread && !acknowledgedMailIds.includes(m.id),
+      (m) => (m.minAct ?? 1) <= act && m.unread && !acknowledgedMailIds.includes(m.id),
     ).length;
     const chat = (chatData?.threads ?? []).filter((t) => {
       if (t.locked === true && !unlockedThreadIds.includes(t.id)) return false;
@@ -22,12 +23,13 @@ export function useAppBadges(): AppBadges {
       return last !== undefined && last.from !== 'player';
     }).length;
     return { mail, chat };
-  }, [mailData, chatData, acknowledgedMailIds, unlockedThreadIds, seenThreadIds]);
+  }, [mailData, chatData, act, acknowledgedMailIds, unlockedThreadIds, seenThreadIds]);
 }
 
 export function useBadgeAcknowledge(): void {
   const mailData = useGameStore((s) => s.mailData);
   const chatData = useGameStore((s) => s.chatData);
+  const act = useGameStore((s) => s.act);
   const acknowledgedMailIds = useUiStore((s) => s.acknowledgedMailIds);
   const unlockedThreadIds = useUiStore((s) => s.unlockedChatThreadIds);
   const seenThreadIds = useUiStore((s) => s.seenChatThreadIds);
@@ -40,9 +42,11 @@ export function useBadgeAcknowledge(): void {
   const unreadMailIds = useMemo(
     () =>
       (mailData?.mails ?? [])
-        .filter((m) => m.unread && !acknowledgedMailIds.includes(m.id))
+        .filter(
+          (m) => (m.minAct ?? 1) <= act && m.unread && !acknowledgedMailIds.includes(m.id),
+        )
         .map((m) => m.id),
-    [mailData, acknowledgedMailIds],
+    [mailData, act, acknowledgedMailIds],
   );
 
   const unreadThreadIds = useMemo(

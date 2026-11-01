@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import { Command, Folder, MessageCircle, StickyNote, Terminal } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useGameStore } from '@core/stores/gameStore';
@@ -11,6 +11,10 @@ const WALLPAPER_URL =
   'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&q=80&w=1920';
 
 const MENU_BAR_HEIGHT = 28;
+const IDLE_HINT_MS = 120000;
+const MAC_NOTIF_AUTO_DISMISS_MS = 9000;
+const HINT_SENDER = '?';
+const HINT_MESSAGE = 'Dia tidak akan mati dengan satu klik.';
 const DAY_NAMES = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'] as const;
 const MONTH_NAMES = [
   'Jan',
@@ -33,6 +37,12 @@ interface DockApp {
   title: string;
   icon: LucideIcon;
   tileClass: string;
+}
+
+interface MacNotification {
+  id: string;
+  sender: string;
+  message: string;
 }
 
 const DOCK_APPS: readonly DockApp[] = [
@@ -75,12 +85,57 @@ function formatMacClock(time: string): string {
   return `${day} ${FAKE_TODAY.getDate()} ${month}  ${time.replace(':', '.')}`;
 }
 
+interface MacNotificationCardProps {
+  notification: MacNotification;
+  onDismiss: () => void;
+}
+
+function MacNotificationCard({ notification, onDismiss }: MacNotificationCardProps) {
+  useEffect(() => {
+    const timer = window.setTimeout(onDismiss, MAC_NOTIF_AUTO_DISMISS_MS);
+    return () => {
+      window.clearTimeout(timer);
+    };
+  }, [onDismiss]);
+
+  return (
+    <motion.div
+      role="status"
+      onClick={onDismiss}
+      initial={{ opacity: 0, x: 48 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: 48 }}
+      transition={{ duration: 0.3, ease: 'easeOut' }}
+      className="absolute right-3 z-[9600] flex w-80 cursor-default items-start gap-3 rounded-2xl border border-black/10 bg-white/85 p-3 text-neutral-800 shadow-[0_12px_32px_rgba(0,0,0,0.35)] backdrop-blur-xl"
+      style={{ top: MENU_BAR_HEIGHT + 8 }}
+    >
+      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-gradient-to-b from-[#6EE07F] to-[#1FAF3E]">
+        <MessageCircle size={20} strokeWidth={1.75} className="text-white" />
+      </span>
+      <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+        <div className="flex items-baseline justify-between gap-2">
+          <span className="truncate text-[13px] font-semibold">{notification.sender}</span>
+          <span className="shrink-0 text-[11px] text-neutral-500">sekarang</span>
+        </div>
+        <span className="break-words text-[13px] leading-snug text-neutral-700">
+          {notification.message}
+        </span>
+      </div>
+    </motion.div>
+  );
+}
+
 export function MacDesktop() {
   const timeCurrent = useGameStore((s) => s.timeCurrent);
+  const triedForceQuit03 = useGameStore((s) => s.flags.mac.triedForceQuit03);
   const macWindows = useUiStore((s) => s.macWindows);
   const openMacWindow = useUiStore((s) => s.openMacWindow);
   const [appleMenuOpen, setAppleMenuOpen] = useState<boolean>(false);
   const [forceQuitOpen, setForceQuitOpen] = useState<boolean>(false);
+  const [engaged, setEngaged] = useState<boolean>(false);
+  const [notification, setNotification] = useState<MacNotification | null>(null);
+
+  const terminalOpen = macWindows.some((w) => w.appId === 'terminal');
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -96,6 +151,25 @@ export function MacDesktop() {
       document.removeEventListener('keydown', onKey);
     };
   }, []);
+
+  // >>> START PATCH
+  useEffect(() => {
+    if (engaged) return;
+    if (terminalOpen || forceQuitOpen || triedForceQuit03) setEngaged(true);
+  }, [engaged, terminalOpen, forceQuitOpen, triedForceQuit03]);
+
+  useEffect(() => {
+    if (engaged) return;
+    const timer = window.setTimeout(() => {
+      setNotification({ id: 'hint_force_quit', sender: HINT_SENDER, message: HINT_MESSAGE });
+    }, IDLE_HINT_MS);
+    return () => {
+      window.clearTimeout(timer);
+    };
+  }, [engaged]);
+
+  const dismissNotification = () => setNotification(null);
+  // <<< END PATCH
 
   const openForceQuit = () => {
     setAppleMenuOpen(false);
@@ -194,6 +268,16 @@ export function MacDesktop() {
           })}
         </ul>
       </nav>
+
+      <AnimatePresence>
+        {notification !== null ? (
+          <MacNotificationCard
+            key={notification.id}
+            notification={notification}
+            onDismiss={dismissNotification}
+          />
+        ) : null}
+      </AnimatePresence>
 
       {forceQuitOpen ? <ForceQuitDialog onClose={() => setForceQuitOpen(false)} /> : null}
     </div>

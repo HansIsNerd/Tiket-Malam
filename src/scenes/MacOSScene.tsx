@@ -7,6 +7,7 @@ import { MacWindowFrame } from '@macos/MacWindowFrame';
 
 const FADE_TO_BLACK_MS = 1500;
 const BLACK_HOLD_MS = 800;
+const ACT3_TIME = '03:00';
 
 export function MacOSScene() {
   const macWindows = useUiStore((s) => s.macWindows);
@@ -25,7 +26,10 @@ export function MacOSScene() {
   useEffect(() => {
     if (!fading) return;
     const timer = window.setTimeout(() => {
-      useGameStore.getState().setFlag('act3.started', true);
+      const game = useGameStore.getState();
+      game.setAct(3);
+      game.setTime(ACT3_TIME);
+      game.setFlag('act3.started', true);
       setScene('windows');
     }, FADE_TO_BLACK_MS + BLACK_HOLD_MS);
     return () => {
