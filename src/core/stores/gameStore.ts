@@ -54,6 +54,11 @@ export interface Act2Flags {
 
 export interface MacFlags {
   ssIconActive: boolean;
+  notesRead: boolean;
+  folderJanganOpened: boolean;
+  psAuxRun: boolean;
+  historyRead: boolean;
+  whoRun: boolean;
 }
 
 export interface UiFlags {
@@ -207,6 +212,11 @@ export const useGameStore = create<GameState>()(
         },
         mac: {
           ssIconActive: false,
+          notesRead: false,
+          folderJanganOpened: false,
+          psAuxRun: false,
+          historyRead: false,
+          whoRun: false,
         },
         ui: {
           desktopTheme: 'light',

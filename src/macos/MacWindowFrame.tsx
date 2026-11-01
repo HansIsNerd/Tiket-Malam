@@ -5,6 +5,9 @@ import { useUiStore } from '@core/stores/uiStore';
 import type { MacWindowInstance } from '@core/stores/uiStore';
 import type { Position } from '@core/types';
 import { cx } from '@core/utils/cx';
+import { MacFinderApp } from '@macos/apps/MacFinderApp';
+import { MacNotesApp } from '@macos/apps/MacNotesApp';
+import { MacTerminalApp } from '@macos/apps/MacTerminalApp';
 
 interface MacWindowFrameProps {
   window: MacWindowInstance;
@@ -25,11 +28,11 @@ const LIGHT_BASE =
 function renderMacApp(appId: string) {
   switch (appId) {
     case 'finder':
-      return <p className="p-4 text-sm text-neutral-700">Finder</p>;
+      return <MacFinderApp />;
     case 'notes':
-      return <p className="p-4 text-sm text-neutral-700">Notes</p>;
+      return <MacNotesApp />;
     case 'terminal':
-      return <p className="p-4 font-mono text-xs text-neutral-200">$ _</p>;
+      return <MacTerminalApp />;
     case 'messages':
       return <p className="p-4 text-sm text-neutral-700">Messages</p>;
     default:
