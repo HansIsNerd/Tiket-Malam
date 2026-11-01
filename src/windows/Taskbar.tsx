@@ -227,6 +227,7 @@ export function Taskbar() {
   };
 
   const handleScreenSharing = () => {
+    if (!useGameStore.getState().flags.mac.ssIconActive) return;
     useUiStore.getState().setScene('macos');
   };
 
