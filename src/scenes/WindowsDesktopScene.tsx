@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useGameStore } from '@core/stores/gameStore';
 import { useUiStore } from '@core/stores/uiStore';
-import { loadAllData } from '@core/services/dataLoader';
+import { loadFileData } from '@core/services/dataLoader';
 import { startEventEngine } from '@core/services/eventEngine';
 import { startGameClock } from '@core/services/gameClock';
 import { playAmbient, setMasterVolume, stopAmbient } from '@core/services/audioService';
@@ -16,24 +16,18 @@ const FADE_OUT_MS = 3000;
 
 export function WindowsDesktopScene() {
   const windows = useUiStore((s) => s.windows);
+  const fileData = useGameStore((s) => s.fileData);
+  const setFileData = useGameStore((s) => s.setFileData);
   const e10Instruction = useGameStore((s) => s.flags.act2.e10Instruction);
   const [fading, setFading] = useState<boolean>(false);
   const [showEnd, setShowEnd] = useState<boolean>(false);
 
-  // >>> START PATCH
   useEffect(() => {
-    const s = useGameStore.getState();
-    if (s.chatData && s.ticketData && s.mailData && s.fileData && s.directoryData) return;
+    if (fileData) return;
     let cancelled = false;
-    loadAllData()
-      .then((d) => {
-        if (cancelled) return;
-        const g = useGameStore.getState();
-        g.setChatData(d.chatData);
-        g.setTicketData(d.ticketData);
-        g.setMailData(d.mailData);
-        g.setFileData(d.fileData);
-        g.setDirectoryData(d.directoryData);
+    loadFileData()
+      .then((data) => {
+        if (!cancelled) setFileData(data);
       })
       .catch((err: unknown) => {
         console.warn(err);
@@ -41,8 +35,7 @@ export function WindowsDesktopScene() {
     return () => {
       cancelled = true;
     };
-  }, []);
-  // <<< END PATCH
+  }, [fileData, setFileData]);
 
   useEffect(() => {
     const stopEngine = startEventEngine();
