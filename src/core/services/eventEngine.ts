@@ -100,9 +100,18 @@ function runAction(action: EventAction): void {
       if (!Number.isNaN(now)) game.setFlag(action.path as FlagPath, now as never);
       break;
     }
-    case 'show_notification':
-      useNotificationStore.getState().addNotification(action.payload);
+    case 'show_notification': {
+      const payload = action.payload;
+      const send = () => {
+        useNotificationStore.getState().addNotification(payload);
+      };
+      if (action.delayMs !== undefined && action.delayMs > 0) {
+        window.setTimeout(send, action.delayMs);
+      } else {
+        send();
+      }
       break;
+    }
     case 'set_time':
       game.setTime(action.time);
       break;

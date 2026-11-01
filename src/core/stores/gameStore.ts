@@ -31,6 +31,12 @@ export interface Act2Flags {
   e09BagasContact: boolean;
   e09At: number;
   e10Instruction: boolean;
+  e11ProfileChanged: boolean;
+  e12RaniHard: boolean;
+  e12At: number;
+  e13DartoConfused: boolean;
+  e13At: number;
+  e14DoubleNotif: boolean;
   cctvOpened: boolean;
   e06CctvChair: boolean;
   e06CctvChairAt: number;
@@ -172,6 +178,12 @@ export const useGameStore = create<GameState>()(
           e09BagasContact: false,
           e09At: 0,
           e10Instruction: false,
+          e11ProfileChanged: false,
+          e12RaniHard: false,
+          e12At: 0,
+          e13DartoConfused: false,
+          e13At: 0,
+          e14DoubleNotif: false,
           cctvOpened: false,
           e06CctvChair: false,
           e06CctvChairAt: 0,

@@ -43,12 +43,48 @@
       ]
     },
     {
+      "id": "chat_darto_confused",
+      "contactId": "pak_darto",
+      "locked": true,
+      "messages": [
+        {
+          "time": "23:29",
+          "from": "pak_darto",
+          "text": "Mas, kamu di mana? Saya ke ruang server, kursinya kosong."
+        }
+      ]
+    },
+    {
       "id": "chat_rani_authority",
       "contactId": "rani",
       "locked": true,
       "messages": [
         { "time": "23:14", "from": "rani", "text": "Kamu buka log ya?" },
         { "time": "23:15", "from": "rani", "text": "Log lantai 4 itu arsip. Jangan diutak-atik." }
+      ]
+    },
+    {
+      "id": "chat_rani_hard",
+      "contactId": "rani",
+      "locked": true,
+      "messages": [
+        {
+          "time": "23:27",
+          "from": "rani",
+          "text": "Kamu masih di kantor? Saya lihat koneksi remote kamu ke L4 aktif."
+        }
+      ],
+      "replyOptions": [
+        { "id": "ticket", "text": "Iya Bu, ada tiket printer." },
+        { "id": "who", "text": "Siapa yang lihat, Bu?" }
+      ]
+    },
+    {
+      "id": "chat_rani_doubled",
+      "contactId": "rani",
+      "locked": true,
+      "messages": [
+        { "time": "23:33", "from": "rani", "text": "Kamu sudah matikan?" }
       ]
     },
     {

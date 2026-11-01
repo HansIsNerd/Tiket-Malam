@@ -5,6 +5,7 @@ import { useGameStore } from '@core/stores/gameStore';
 import type { Act2Flags } from '@core/stores/gameStore';
 import { useUiStore } from '@core/stores/uiStore';
 import { loadChatData } from '@core/services/dataLoader';
+import type { ChatMessage } from '@core/types/chat';
 import { cx } from '@core/utils/cx';
 
 const TYPING_MS = 4500;
@@ -15,6 +16,7 @@ const FLAG_GATED_THREADS: Record<string, (a: Act2Flags) => boolean> = {
 };
 
 const deliveredThreadIds = new Set<string>();
+const chosenReplies = new Map<string, ChatMessage>();
 
 const DOT_DELAYS_MS = [0, 200, 400] as const;
 
@@ -22,6 +24,7 @@ export function ChatApp() {
   const chatData = useGameStore((s) => s.chatData);
   const setChatData = useGameStore((s) => s.setChatData);
   const act2 = useGameStore((s) => s.flags.act2);
+  const timeCurrent = useGameStore((s) => s.timeCurrent);
   const unlockedThreadIds = useUiStore((s) => s.unlockedChatThreadIds);
   const pendingThreadId = useUiStore((s) => s.pendingChatThreadId);
   const clearPendingThread = useUiStore((s) => s.clearPendingChatThread);
@@ -74,7 +77,14 @@ export function ChatApp() {
   const typingIndex = typingThread ? contactThreads.indexOf(typingThread) : -1;
   const visibleThreads = typingIndex < 0 ? contactThreads : contactThreads.slice(0, typingIndex);
 
-  const messages = visibleThreads.flatMap((t) => t.messages);
+  const messages = visibleThreads.flatMap((t) => {
+    const reply = chosenReplies.get(t.id);
+    return reply ? [...t.messages, reply] : t.messages;
+  });
+  const pendingReplyThread =
+    [...visibleThreads]
+      .reverse()
+      .find((t) => t.replyOptions !== undefined && !chosenReplies.has(t.id)) ?? null;
   const disabledThread =
     [...visibleThreads, ...(typingThread ? [typingThread] : [])].find(
       (t) => t.inputDisabled === true,
@@ -94,7 +104,7 @@ export function ChatApp() {
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ block: 'end' });
-  }, [activeContactId, messages.length, typingThreadId]);
+  }, [activeContactId, messages.length, typingThreadId, pendingReplyThread?.id]);
 
   const handleSelectContact = (id: string) => {
     setActiveContactId(id);
@@ -105,6 +115,11 @@ export function ChatApp() {
     e.preventDefault();
     if (isInputDisabled || draft.trim() === '') return;
     setDraft('');
+  };
+
+  const handlePickReply = (threadId: string, text: string) => {
+    chosenReplies.set(threadId, { time: timeCurrent, from: 'player', text });
+    setDeliveredVersion((v) => v + 1);
   };
 
   return (
@@ -216,6 +231,21 @@ export function ChatApp() {
               ) : null}
               <div ref={bottomRef} />
             </div>
+
+            {pendingReplyThread !== null && pendingReplyThread.replyOptions ? (
+              <div className="flex shrink-0 flex-wrap justify-end gap-2 border-t border-[var(--os-border)] bg-[var(--os-panel)] px-3 pt-3">
+                {pendingReplyThread.replyOptions.map((opt) => (
+                  <button
+                    key={opt.id}
+                    type="button"
+                    onClick={() => handlePickReply(pendingReplyThread.id, opt.text)}
+                    className="rounded-full border border-[var(--os-accent)] bg-transparent px-3 py-1.5 text-xs text-neutral-100 transition-colors hover:bg-[var(--os-accent)]"
+                  >
+                    {opt.text}
+                  </button>
+                ))}
+              </div>
+            ) : null}
 
             <form
               onSubmit={handleSubmit}

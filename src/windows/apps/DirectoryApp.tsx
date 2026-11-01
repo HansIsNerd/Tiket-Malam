@@ -5,24 +5,35 @@ import { loadDirectoryData } from '@core/services/dataLoader';
 import type { Employee, EmployeeStatus } from '@core/types/directory';
 import { cx } from '@core/utils/cx';
 
-const STATUS_LABEL: Record<EmployeeStatus, string> = {
+type DisplayStatus = EmployeeStatus | 'online';
+
+const STATUS_LABEL: Record<DisplayStatus, string> = {
   active: 'Active',
   resigned: 'Resigned',
+  online: 'Online',
 };
 
-const STATUS_CLASS: Record<EmployeeStatus, string> = {
+const STATUS_CLASS: Record<DisplayStatus, string> = {
   active: 'border-emerald-500/50 text-emerald-400',
   resigned: 'border-red-500/50 text-red-400',
+  online: 'border-emerald-500/50 text-emerald-400',
 };
 
 const ROW_GRID = 'grid grid-cols-[1.2fr_1.4fr_96px] items-center gap-2 px-4';
 
+function resolveStatus(employee: Employee, bagasContact: boolean): DisplayStatus {
+  if (employee.id === 'bagas_p' && bagasContact) return 'online';
+  return employee.status;
+}
+
 interface ProfilePanelProps {
   employee: Employee;
   displayName: string;
+  status: DisplayStatus;
+  blurred: boolean;
 }
 
-function ProfilePanel({ employee, displayName }: ProfilePanelProps) {
+function ProfilePanel({ employee, displayName, status, blurred }: ProfilePanelProps) {
   const initials = displayName
     .split(/\s+/)
     .map((p) => p.charAt(0))
@@ -32,7 +43,12 @@ function ProfilePanel({ employee, displayName }: ProfilePanelProps) {
 
   return (
     <div className="flex min-h-0 flex-1 flex-col items-center gap-4 overflow-y-auto px-6 py-8">
-      <div className="flex h-24 w-24 items-center justify-center rounded-full bg-neutral-600 text-3xl font-semibold text-neutral-200">
+      <div
+        className={cx(
+          'flex h-24 w-24 items-center justify-center rounded-full bg-neutral-600 text-3xl font-semibold text-neutral-200 transition-[filter] duration-700',
+          blurred && 'blur-sm',
+        )}
+      >
         {employee.id === 'bagas_p' ? 'BP' : initials}
       </div>
       <div className="flex flex-col items-center gap-1">
@@ -56,10 +72,10 @@ function ProfilePanel({ employee, displayName }: ProfilePanelProps) {
             <span
               className={cx(
                 'rounded-sm border px-1.5 py-0.5 text-[10px] font-semibold uppercase',
-                STATUS_CLASS[employee.status],
+                STATUS_CLASS[status],
               )}
             >
-              {STATUS_LABEL[employee.status]}
+              {STATUS_LABEL[status]}
             </span>
           </dd>
         </div>
@@ -72,6 +88,7 @@ export function DirectoryApp() {
   const directoryData = useGameStore((s) => s.directoryData);
   const setDirectoryData = useGameStore((s) => s.setDirectoryData);
   const playerName = useGameStore((s) => s.playerName);
+  const bagasContact = useGameStore((s) => s.flags.act2.e09BagasContact);
   const setFlag = useGameStore((s) => s.setFlag);
   const [activeId, setActiveId] = useState<string | null>(null);
 
@@ -100,6 +117,9 @@ export function DirectoryApp() {
     setActiveId(employee.id);
     if (employee.id === 'bagas_p') {
       setFlag('act1.directoryBagasSeen', true);
+      if (bagasContact && !useGameStore.getState().flags.act2.e11ProfileChanged) {
+        setFlag('act2.e11ProfileChanged', true);
+      }
     }
   };
 
@@ -119,7 +139,8 @@ export function DirectoryApp() {
         <ul className="chat-scroll min-h-0 flex-1 overflow-y-auto">
           {employees.map((employee) => {
             const clickable = employee.hasProfile === true;
-            const isResigned = employee.status === 'resigned';
+            const status = resolveStatus(employee, bagasContact);
+            const isResigned = status === 'resigned';
             return (
               <li key={employee.id} className="border-b border-[var(--os-border)]">
                 <button
@@ -139,10 +160,10 @@ export function DirectoryApp() {
                   <span
                     className={cx(
                       'justify-self-end rounded-sm border px-1.5 py-0.5 text-[10px] font-semibold uppercase',
-                      STATUS_CLASS[employee.status],
+                      STATUS_CLASS[status],
                     )}
                   >
-                    {STATUS_LABEL[employee.status]}
+                    {STATUS_LABEL[status]}
                   </span>
                 </button>
               </li>
@@ -158,7 +179,12 @@ export function DirectoryApp() {
             <p className="text-sm">Pilih karyawan untuk melihat profil</p>
           </div>
         ) : (
-          <ProfilePanel employee={active} displayName={resolveName(active.name)} />
+          <ProfilePanel
+            employee={active}
+            displayName={resolveName(active.name)}
+            status={resolveStatus(active, bagasContact)}
+            blurred={active.id === 'bagas_p' && !bagasContact}
+          />
         )}
       </section>
     </div>

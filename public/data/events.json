@@ -154,6 +154,7 @@
         "type": "and",
         "conditions": [
           { "type": "flag", "path": "act2.e09BagasContact", "value": true },
+          { "type": "flag", "path": "act2.e14DoubleNotif", "value": true },
           { "type": "not", "condition": { "type": "flag", "path": "act2.e10Instruction", "value": true } },
           { "type": "time_after", "time": "23:30" },
           { "type": "minutes_since", "path": "act2.e09At", "minutes": 8 }
@@ -166,6 +167,89 @@
           "payload": {
             "title": "bagas.p",
             "message": "bagas.p sedang mengetik...",
+            "appId": "chat"
+          }
+        }
+      ]
+    },
+    {
+      "id": "e12_rani_hard",
+      "once": true,
+      "condition": {
+        "type": "and",
+        "conditions": [
+          { "type": "flag", "path": "act2.e09BagasContact", "value": true },
+          { "type": "minutes_since", "path": "act2.e09At", "minutes": 3 },
+          { "type": "not", "condition": { "type": "flag", "path": "act2.e12RaniHard", "value": true } }
+        ]
+      },
+      "actions": [
+        { "type": "set_flag", "path": "act2.e12RaniHard", "value": true },
+        { "type": "mark_time", "path": "act2.e12At" },
+        { "type": "unlock_chat_thread", "threadId": "chat_rani_hard" },
+        {
+          "type": "show_notification",
+          "payload": {
+            "title": "Rani",
+            "message": "Kamu masih di kantor? Saya lihat koneksi remote kamu ke L4 aktif.",
+            "appId": "chat"
+          }
+        }
+      ]
+    },
+    {
+      "id": "e13_darto_confused",
+      "once": true,
+      "condition": {
+        "type": "and",
+        "conditions": [
+          { "type": "flag", "path": "act2.e12RaniHard", "value": true },
+          { "type": "minutes_since", "path": "act2.e12At", "minutes": 2 },
+          { "type": "not", "condition": { "type": "flag", "path": "act2.e13DartoConfused", "value": true } }
+        ]
+      },
+      "actions": [
+        { "type": "set_flag", "path": "act2.e13DartoConfused", "value": true },
+        { "type": "mark_time", "path": "act2.e13At" },
+        { "type": "unlock_chat_thread", "threadId": "chat_darto_confused" },
+        {
+          "type": "show_notification",
+          "payload": {
+            "title": "Pak Darto",
+            "message": "Mas, kamu di mana? Saya ke ruang server, kursinya kosong.",
+            "appId": "chat"
+          }
+        }
+      ]
+    },
+    {
+      "id": "e14_double_notif",
+      "once": true,
+      "condition": {
+        "type": "and",
+        "conditions": [
+          { "type": "flag", "path": "act2.e13DartoConfused", "value": true },
+          { "type": "minutes_since", "path": "act2.e13At", "minutes": 4 },
+          { "type": "not", "condition": { "type": "flag", "path": "act2.e14DoubleNotif", "value": true } }
+        ]
+      },
+      "actions": [
+        { "type": "set_flag", "path": "act2.e14DoubleNotif", "value": true },
+        { "type": "unlock_chat_thread", "threadId": "chat_rani_doubled" },
+        {
+          "type": "show_notification",
+          "payload": {
+            "title": "Rani",
+            "message": "Kamu sudah matikan?",
+            "appId": "chat"
+          }
+        },
+        {
+          "type": "show_notification",
+          "delayMs": 900,
+          "payload": {
+            "title": "Rani",
+            "message": "Kamu sudah matikan?",
             "appId": "chat"
           }
         }

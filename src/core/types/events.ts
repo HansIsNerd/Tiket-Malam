@@ -53,6 +53,7 @@ export const EventActionSchema = z.discriminatedUnion('type', [
   z.object({
     type: z.literal('show_notification'),
     payload: NotificationPayloadSchema,
+    delayMs: z.number().int().nonnegative().optional(),
   }),
   z.object({
     type: z.literal('set_time'),

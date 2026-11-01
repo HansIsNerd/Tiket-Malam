@@ -14,6 +14,11 @@ export const ChatMessageSchema = z.object({
   text: z.string().min(1),
 });
 
+export const ReplyOptionSchema = z.object({
+  id: z.string().min(1),
+  text: z.string().min(1),
+});
+
 export const ChatThreadSchema = z.object({
   id: z.string().min(1),
   contactId: z.string().min(1),
@@ -21,6 +26,7 @@ export const ChatThreadSchema = z.object({
   locked: z.boolean().optional(),
   inputDisabled: z.boolean().optional(),
   inputDisabledReason: z.string().optional(),
+  replyOptions: z.array(ReplyOptionSchema).optional(),
 });
 
 export const ChatDataSchema = z.object({
@@ -30,5 +36,6 @@ export const ChatDataSchema = z.object({
 
 export type Contact = z.infer<typeof ContactSchema>;
 export type ChatMessage = z.infer<typeof ChatMessageSchema>;
+export type ReplyOption = z.infer<typeof ReplyOptionSchema>;
 export type ChatThread = z.infer<typeof ChatThreadSchema>;
 export type ChatData = z.infer<typeof ChatDataSchema>;
