@@ -227,7 +227,7 @@ export function Taskbar() {
   };
 
   const handleScreenSharing = () => {
-    console.log('Transisi ke macOS dimulai...');
+    useUiStore.getState().setScene('macos');
   };
 
   return (
