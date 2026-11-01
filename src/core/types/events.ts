@@ -45,6 +45,7 @@ export const EventActionSchema = z.discriminatedUnion('type', [
     type: z.literal('set_flag'),
     path: z.string().min(1),
     value: z.union([z.boolean(), z.number(), z.string()]),
+    delayMs: z.number().int().nonnegative().optional(),
   }),
   z.object({
     type: z.literal('mark_time'),

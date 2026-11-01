@@ -14,7 +14,6 @@
       "actions": [
         { "type": "set_flag", "path": "act1.act2Gate", "value": true },
         { "type": "advance_act", "act": 2 },
-        { "type": "set_flag", "path": "ui.desktopTheme", "value": "dark" },
         { "type": "unlock_chat_thread", "threadId": "chat_darto_gate" },
         {
           "type": "show_notification",
@@ -315,6 +314,35 @@
       },
       "actions": [
         { "type": "set_flag", "path": "act2.e17WebcamShift", "value": true }
+      ]
+    },
+    {
+      "id": "e19_blackout",
+      "once": true,
+      "condition": {
+        "type": "and",
+        "conditions": [
+          { "type": "flag", "path": "act2.e17WebcamShift", "value": true },
+          { "type": "not", "condition": { "type": "flag", "path": "act2.e19BlackoutStarted", "value": true } },
+          { "type": "not", "condition": { "type": "flag", "path": "act2.e19Blackout", "value": true } }
+        ]
+      },
+      "actions": [
+        { "type": "set_flag", "path": "act2.e19BlackoutStarted", "value": true }
+      ]
+    },
+    {
+      "id": "e20_macos_bridge",
+      "once": true,
+      "condition": {
+        "type": "and",
+        "conditions": [
+          { "type": "flag", "path": "act2.e19Blackout", "value": true },
+          { "type": "not", "condition": { "type": "flag", "path": "mac.ssIconActive", "value": true } }
+        ]
+      },
+      "actions": [
+        { "type": "set_flag", "path": "mac.ssIconActive", "value": true, "delayMs": 5000 }
       ]
     }
   ]

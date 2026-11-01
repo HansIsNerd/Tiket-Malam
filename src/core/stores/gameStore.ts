@@ -48,6 +48,12 @@ export interface Act2Flags {
   e16RemoteReleased: boolean;
   e16At: number;
   e17WebcamShift: boolean;
+  e19BlackoutStarted: boolean;
+  e19Blackout: boolean;
+}
+
+export interface MacFlags {
+  ssIconActive: boolean;
 }
 
 export interface UiFlags {
@@ -57,6 +63,7 @@ export interface UiFlags {
 export interface Flags {
   act1: Act1Flags;
   act2: Act2Flags;
+  mac: MacFlags;
   ui: UiFlags;
 }
 
@@ -195,6 +202,11 @@ export const useGameStore = create<GameState>()(
           e16RemoteReleased: false,
           e16At: 0,
           e17WebcamShift: false,
+          e19BlackoutStarted: false,
+          e19Blackout: false,
+        },
+        mac: {
+          ssIconActive: false,
         },
         ui: {
           desktopTheme: 'light',
@@ -251,6 +263,7 @@ export const useGameStore = create<GameState>()(
           flags: {
             act1: { ...current.flags.act1, ...saved.flags?.act1 },
             act2: { ...current.flags.act2, ...saved.flags?.act2 },
+            mac: { ...current.flags.mac, ...saved.flags?.mac },
             ui: { ...current.flags.ui, ...saved.flags?.ui },
           },
         };

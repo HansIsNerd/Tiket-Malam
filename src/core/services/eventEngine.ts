@@ -92,9 +92,17 @@ function checkCondition(state: GameSnapshot, cond: EventCondition): boolean {
 function runAction(action: EventAction): void {
   const game = useGameStore.getState();
   switch (action.type) {
-    case 'set_flag':
-      game.setFlag(action.path as FlagPath, action.value as never);
+    case 'set_flag': {
+      const apply = () => {
+        useGameStore.getState().setFlag(action.path as FlagPath, action.value as never);
+      };
+      if (action.delayMs !== undefined && action.delayMs > 0) {
+        window.setTimeout(apply, action.delayMs);
+      } else {
+        apply();
+      }
       break;
+    }
     case 'mark_time': {
       const now = toShiftMinutes(game.timeCurrent);
       if (!Number.isNaN(now)) game.setFlag(action.path as FlagPath, now as never);

@@ -53,6 +53,7 @@ function resolveTaskLine(s: TaskState): string {
 export function Desktop() {
   const openWindow = useUiStore((s) => s.openWindow);
   const act = useGameStore((s) => s.act);
+  const desktopTheme = useGameStore((s) => s.flags.ui.desktopTheme);
   const fileData = useGameStore((s) => s.fileData);
   const ticketSeen = useGameStore((s) => s.flags.act1.ticket4471Seen);
   const remoteOpened = useGameStore((s) => s.flags.act1.remoteOpened);
@@ -63,7 +64,7 @@ export function Desktop() {
   const [selectedFileId, setSelectedFileId] = useState<string | null>(null);
 
   const visibleApps = APPS.filter((app) => act >= (ACT_GATED_APPS[app.appId] ?? 1));
-  const isDark = act >= 2;
+  const isDark = desktopTheme === 'dark';
 
   const taskContent = useMemo(
     () =>

@@ -9,6 +9,7 @@ import { Desktop } from '@windows/Desktop';
 import { Taskbar } from '@windows/Taskbar';
 import { WindowFrame } from '@windows/WindowFrame';
 import { NotificationSystem } from '@windows/NotificationSystem';
+import { BlackoutOverlay } from '@windows/BlackoutOverlay';
 import { EndScreen } from '@scenes/EndScreen';
 
 const SILENCE_MS = 10000;
@@ -88,6 +89,7 @@ export function WindowsDesktopScene() {
         <NotificationSystem />
         <Taskbar />
       </div>
+      <BlackoutOverlay />
       {showEnd ? <EndScreen /> : null}
     </div>
   );

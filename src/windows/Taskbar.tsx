@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import {
   Battery,
   Bluetooth,
+  Monitor,
   Moon,
   Plane,
   Sun,
@@ -199,6 +200,7 @@ function CalendarPopup() {
 
 export function Taskbar() {
   const timeCurrent = useGameStore((s) => s.timeCurrent);
+  const ssIconActive = useGameStore((s) => s.flags.mac.ssIconActive);
   const windows = useUiStore((s) => s.windows);
   const focusWindow = useUiStore((s) => s.focusWindow);
   const minimizeWindow = useUiStore((s) => s.minimizeWindow);
@@ -222,6 +224,10 @@ export function Taskbar() {
     } else {
       focusWindow(id);
     }
+  };
+
+  const handleScreenSharing = () => {
+    console.log('Transisi ke macOS dimulai...');
   };
 
   return (
@@ -307,6 +313,24 @@ export function Taskbar() {
         </div>
 
         <div className="flex items-center justify-end gap-1">
+          <AnimatePresence>
+            {ssIconActive ? (
+              <motion.button
+                key="screen-sharing"
+                type="button"
+                aria-label="Screen Sharing"
+                title="Screen Sharing"
+                onClick={handleScreenSharing}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 1.2, ease: 'easeOut' }}
+                className="flex h-9 w-9 items-center justify-center rounded-md text-neutral-300 transition-colors hover:bg-white/10"
+              >
+                <Monitor size={14} strokeWidth={1.75} />
+              </motion.button>
+            ) : null}
+          </AnimatePresence>
           <button
             type="button"
             aria-label="Quick settings"
