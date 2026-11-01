@@ -5,14 +5,17 @@
       "id": "e_gate_trigger",
       "once": true,
       "condition": {
-        "type": "flag",
-        "path": "act1.janganBukaReadEnough",
-        "value": true
+        "type": "and",
+        "conditions": [
+          { "type": "flag", "path": "act1.janganBukaReadEnough", "value": true },
+          { "type": "not", "condition": { "type": "flag", "path": "act1.act2Gate", "value": true } }
+        ]
       },
       "actions": [
         { "type": "set_flag", "path": "act1.act2Gate", "value": true },
         { "type": "advance_act", "act": 2 },
         { "type": "set_flag", "path": "ui.desktopTheme", "value": "dark" },
+        { "type": "unlock_chat_thread", "threadId": "chat_darto_gate" },
         {
           "type": "show_notification",
           "payload": {
@@ -20,8 +23,7 @@
             "message": "Mas, jangan naik.",
             "appId": "chat"
           }
-        },
-        { "type": "open_chat_thread", "threadId": "chat_darto_gate" }
+        }
       ]
     },
     {
@@ -31,11 +33,13 @@
         "type": "and",
         "conditions": [
           { "type": "act_is", "act": 2 },
-          { "type": "flag", "path": "act2.e02LogOpened", "value": true }
+          { "type": "flag", "path": "act2.e02LogOpened", "value": true },
+          { "type": "not", "condition": { "type": "flag", "path": "act2.e02LogRead", "value": true } }
         ]
       },
       "actions": [
-        { "type": "set_flag", "path": "act2.e02LogRead", "value": true }
+        { "type": "set_flag", "path": "act2.e02LogRead", "value": true },
+        { "type": "mark_time", "path": "act2.e02LogReadAt" }
       ]
     },
     {
@@ -45,6 +49,7 @@
         "type": "and",
         "conditions": [
           { "type": "flag", "path": "act2.e02LogRead", "value": true },
+          { "type": "not", "condition": { "type": "flag", "path": "act2.e04RaniAuthority", "value": true } },
           {
             "type": "or",
             "conditions": [
@@ -61,6 +66,7 @@
       },
       "actions": [
         { "type": "set_flag", "path": "act2.e04RaniAuthority", "value": true },
+        { "type": "unlock_chat_thread", "threadId": "chat_rani_authority" },
         {
           "type": "show_notification",
           "payload": {
@@ -68,8 +74,7 @@
             "message": "Kamu buka log ya?",
             "appId": "chat"
           }
-        },
-        { "type": "open_chat_thread", "threadId": "chat_rani_authority" }
+        }
       ]
     },
     {
@@ -79,11 +84,14 @@
         "type": "and",
         "conditions": [
           { "type": "flag", "path": "act2.e02LogRead", "value": true },
-          { "type": "time_after", "time": "23:18" }
+          { "type": "not", "condition": { "type": "flag", "path": "act2.e09BagasContact", "value": true } },
+          { "type": "time_after", "time": "23:18" },
+          { "type": "minutes_since", "path": "act2.e02LogReadAt", "minutes": 8 }
         ]
       },
       "actions": [
         { "type": "set_flag", "path": "act2.e09BagasContact", "value": true },
+        { "type": "mark_time", "path": "act2.e09At" },
         {
           "type": "show_notification",
           "payload": {
@@ -101,7 +109,9 @@
         "type": "and",
         "conditions": [
           { "type": "flag", "path": "act2.e09BagasContact", "value": true },
-          { "type": "time_after", "time": "23:30" }
+          { "type": "not", "condition": { "type": "flag", "path": "act2.e10Instruction", "value": true } },
+          { "type": "time_after", "time": "23:30" },
+          { "type": "minutes_since", "path": "act2.e09At", "minutes": 8 }
         ]
       },
       "actions": [

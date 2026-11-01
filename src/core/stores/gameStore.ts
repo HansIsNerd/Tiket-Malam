@@ -25,9 +25,11 @@ export interface Act1Flags {
 export interface Act2Flags {
   e02LogOpened: boolean;
   e02LogRead: boolean;
+  e02LogReadAt: number;
   e02ScrollCount: number;
   e04RaniAuthority: boolean;
   e09BagasContact: boolean;
+  e09At: number;
   e10Instruction: boolean;
 }
 
@@ -57,6 +59,7 @@ interface GameState {
   playerName: string;
   act: number;
   timeCurrent: string;
+  inGame: boolean;
   chatData: ChatData | null;
   ticketData: TicketData | null;
   mailData: MailData | null;
@@ -79,6 +82,7 @@ interface PersistedGameState {
   playerName: string;
   act: number;
   timeCurrent: string;
+  inGame: boolean;
   flags: Flags;
 }
 
@@ -127,6 +131,7 @@ export const useGameStore = create<GameState>()(
       playerName: 'Dimas',
       act: 1,
       timeCurrent: '22:47',
+      inGame: false,
       chatData: null,
       ticketData: null,
       mailData: null,
@@ -150,9 +155,11 @@ export const useGameStore = create<GameState>()(
         act2: {
           e02LogOpened: false,
           e02LogRead: false,
+          e02LogReadAt: 0,
           e02ScrollCount: 0,
           e04RaniAuthority: false,
           e09BagasContact: false,
+          e09At: 0,
           e10Instruction: false,
         },
         ui: {
@@ -181,7 +188,7 @@ export const useGameStore = create<GameState>()(
 
       completeBoot: (name) => {
         const trimmed = name?.trim();
-        if (trimmed) set({ playerName: trimmed });
+        set(trimmed ? { playerName: trimmed, inGame: true } : { inGame: true });
         useUiStore.getState().setScene('windows');
       },
     }),
@@ -194,6 +201,7 @@ export const useGameStore = create<GameState>()(
         playerName: state.playerName,
         act: state.act,
         timeCurrent: state.timeCurrent,
+        inGame: state.inGame,
         flags: state.flags,
       }),
       merge: (persisted, current) => {
@@ -205,6 +213,7 @@ export const useGameStore = create<GameState>()(
           playerName: saved.playerName ?? current.playerName,
           act: saved.act ?? current.act,
           timeCurrent: saved.timeCurrent ?? current.timeCurrent,
+          inGame: saved.inGame ?? false,
           flags: {
             act1: { ...current.flags.act1, ...saved.flags?.act1 },
             act2: { ...current.flags.act2, ...saved.flags?.act2 },

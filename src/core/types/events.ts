@@ -5,6 +5,7 @@ const TIME_PATTERN = /^([01]\d|2[0-3]):[0-5]\d$/;
 export type EventCondition =
   | { type: 'flag'; path: string; value?: boolean | number | string }
   | { type: 'time_after'; time: string }
+  | { type: 'minutes_since'; path: string; minutes: number }
   | { type: 'act_is'; act: number }
   | { type: 'and'; conditions: EventCondition[] }
   | { type: 'or'; conditions: EventCondition[] }
@@ -20,6 +21,11 @@ export const EventConditionSchema: z.ZodType<EventCondition> = z.lazy(() =>
     z.object({
       type: z.literal('time_after'),
       time: z.string().regex(TIME_PATTERN, 'Format waktu harus HH:MM'),
+    }),
+    z.object({
+      type: z.literal('minutes_since'),
+      path: z.string().min(1),
+      minutes: z.number().int().nonnegative(),
     }),
     z.object({ type: z.literal('act_is'), act: z.number().int() }),
     z.object({ type: z.literal('and'), conditions: z.array(EventConditionSchema) }),
@@ -41,6 +47,10 @@ export const EventActionSchema = z.discriminatedUnion('type', [
     value: z.union([z.boolean(), z.number(), z.string()]),
   }),
   z.object({
+    type: z.literal('mark_time'),
+    path: z.string().min(1),
+  }),
+  z.object({
     type: z.literal('show_notification'),
     payload: NotificationPayloadSchema,
   }),
@@ -51,6 +61,7 @@ export const EventActionSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('advance_act'), act: z.number().int() }),
   z.object({ type: z.literal('play_audio'), audioId: z.string().min(1) }),
   z.object({ type: z.literal('open_chat_thread'), threadId: z.string().min(1) }),
+  z.object({ type: z.literal('unlock_chat_thread'), threadId: z.string().min(1) }),
 ]);
 
 export const GameEventSchema = z.object({

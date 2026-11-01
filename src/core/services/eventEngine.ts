@@ -5,7 +5,7 @@ import { useUiStore } from '@core/stores/uiStore';
 import { EventDataSchema } from '@core/types/events';
 import type { EventAction, EventCondition, GameEvent } from '@core/types/events';
 
-const EVENT_DATA_URL = './data/events.json';
+const EVENT_DATA_URL = '/data/events.json';
 const MAX_PASSES = 10;
 const DAY_MINUTES = 24 * 60;
 const SHIFT_WRAP_MINUTES = 12 * 60;
@@ -71,6 +71,13 @@ function checkCondition(state: GameSnapshot, cond: EventCondition): boolean {
       if (Number.isNaN(now) || Number.isNaN(target)) return false;
       return now >= target;
     }
+    case 'minutes_since': {
+      const marked = readFlag(state, cond.path);
+      if (typeof marked !== 'number' || marked <= 0) return false;
+      const now = toShiftMinutes(state.timeCurrent);
+      if (Number.isNaN(now)) return false;
+      return now - marked >= cond.minutes;
+    }
     case 'act_is':
       return state.act === cond.act;
     case 'and':
@@ -88,6 +95,11 @@ function runAction(action: EventAction): void {
     case 'set_flag':
       game.setFlag(action.path as FlagPath, action.value as never);
       break;
+    case 'mark_time': {
+      const now = toShiftMinutes(game.timeCurrent);
+      if (!Number.isNaN(now)) game.setFlag(action.path as FlagPath, now as never);
+      break;
+    }
     case 'show_notification':
       useNotificationStore.getState().addNotification(action.payload);
       break;
@@ -103,6 +115,14 @@ function runAction(action: EventAction): void {
       const ui = useUiStore.getState();
       ui.unlockChatThread(action.threadId);
       ui.openWindow({ ...CHAT_WINDOW });
+      break;
+    }
+    case 'unlock_chat_thread': {
+      useUiStore.setState((s) =>
+        s.unlockedChatThreadIds.includes(action.threadId)
+          ? s
+          : { unlockedChatThreadIds: [...s.unlockedChatThreadIds, action.threadId] },
+      );
       break;
     }
   }
@@ -126,7 +146,6 @@ export function evaluateEvents(_gameState?: GameSnapshot): void {
           if (event.once && firedOnce.has(event.id)) continue;
           const state = useGameStore.getState();
           if (!checkCondition(state, event.condition)) continue;
-          console.log(`[EventEngine] FIRE ${event.id}`);
           firedThisCall.add(event.id);
           if (event.once) firedOnce.add(event.id);
           event.actions.forEach(runAction);
@@ -159,7 +178,6 @@ function pickNudge(state: GameSnapshot): DartoNudge | null {
 }
 
 function sendDartoNudge(nudge: DartoNudge): void {
-  console.log(`[EventEngine] NUDGE ${nudge.threadId}`);
   useGameStore.getState().setFlag(nudge.sentFlag, true as never);
   useUiStore.getState().unlockChatThread(nudge.threadId);
   useNotificationStore.getState().addNotification({
@@ -184,24 +202,16 @@ function checkIdle(): void {
 }
 
 async function loadEvents(): Promise<GameEvent[]> {
-  let raw: unknown;
-  try {
-    const response = await fetch(EVENT_DATA_URL);
-    if (!response.ok) {
-      throw new Error(`Gagal memuat ${EVENT_DATA_URL}: HTTP ${response.status}`);
-    }
-    raw = await response.json();
-  } catch (err: unknown) {
-    console.error(`[EventEngine] Gagal memuat data dari "${EVENT_DATA_URL}"`, err);
-    throw err;
+  const response = await fetch(EVENT_DATA_URL);
+  if (!response.ok) {
+    throw new Error(`Gagal memuat ${EVENT_DATA_URL}: HTTP ${response.status}`);
   }
-  const result = EventDataSchema.safeParse(raw);
+  const result = EventDataSchema.safeParse(await response.json());
   if (!result.success) {
-    const details = result.error.issues
-      .map((i) => `${i.path.join('.') || '(root)'}: ${i.message}`)
-      .join('\n');
-    console.error(`[EventEngine] Validasi ${EVENT_DATA_URL} gagal:\n${details}`);
     if (import.meta.env.DEV) {
+      const details = result.error.issues
+        .map((i) => `${i.path.join('.') || '(root)'}: ${i.message}`)
+        .join('\n');
       throw new Error(`Validasi ${EVENT_DATA_URL} gagal:\n${details}`);
     }
     throw new Error('Data permainan tidak valid');
@@ -231,7 +241,6 @@ export function startEventEngine(): () => void {
     .then((events) => {
       if (cancelled) return;
       loadedEvents = events;
-      console.log(`[EventEngine] Loaded ${events.length} events`);
       evaluateEvents();
     })
     .catch((err: unknown) => {

@@ -19,9 +19,7 @@ export function startGameClock(): () => void {
   const timer = window.setInterval(() => {
     const state = useGameStore.getState();
     if (state.flags.act2.e10Instruction) return;
-    const next = formatMinutes(parseMinutes(state.timeCurrent) + 1);
-    console.log(`[GameClock] ${state.timeCurrent} -> ${next}`);
-    state.setTime(next);
+    state.setTime(formatMinutes(parseMinutes(state.timeCurrent) + 1));
   }, TICK_MS);
 
   return () => {
