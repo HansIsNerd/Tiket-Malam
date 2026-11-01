@@ -135,7 +135,6 @@ export function MacTerminalApp() {
     setCursor(null);
   };
 
-  // >>> START PATCH
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       submit();
@@ -160,7 +159,6 @@ export function MacTerminalApp() {
       setInput(history[idx] ?? '');
     }
   };
-  // <<< END PATCH
 
   return (
     <div

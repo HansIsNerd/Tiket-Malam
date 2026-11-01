@@ -1,7 +1,8 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { UIEvent } from 'react';
 import { motion } from 'framer-motion';
 import { useGameStore } from '@core/stores/gameStore';
+import { triggerEnding } from '@core/services/endingService';
 import { cx } from '@core/utils/cx';
 
 interface LogRow {
@@ -23,6 +24,8 @@ const ANOMALY_ROW: LogRow = {
 };
 
 const ROW_GRID = 'grid grid-cols-[100px_1fr_100px_1fr] items-center gap-2 px-4';
+const ACTION_BTN =
+  'h-7 border border-neutral-500 bg-transparent px-3 text-[11px] font-semibold tracking-wider text-neutral-200 transition-colors hover:bg-white/10';
 
 function buildNormalRows(playerName: string): LogRow[] {
   const me = playerName.trim().toLowerCase() || 'player';
@@ -42,6 +45,7 @@ export function LogApp() {
   const lastTopRef = useRef<number>(0);
   const lastAddRef = useRef<number>(0);
   const countRef = useRef<number>(scrollCount);
+  const [confirmOpen, setConfirmOpen] = useState<boolean>(false);
   countRef.current = scrollCount;
 
   useEffect(() => {
@@ -72,8 +76,19 @@ export function LogApp() {
     setFlag('act2.e02ScrollCount', next);
   };
 
+  const handleConfirmClear = () => {
+    setConfirmOpen(false);
+    triggerEnding('hapus');
+  };
+
   return (
-    <div className="flex h-full w-full flex-col bg-[var(--os-bg)] text-neutral-100">
+    <div className="relative flex h-full w-full flex-col bg-[var(--os-bg)] text-neutral-100">
+      <div className="flex h-10 shrink-0 items-center justify-end border-b border-[var(--os-border)] bg-[var(--os-panel)] px-3">
+        <button type="button" onClick={() => setConfirmOpen(true)} className={ACTION_BTN}>
+          [ Bersihkan Log ]
+        </button>
+      </div>
+
       <div
         className={cx(
           ROW_GRID,
@@ -132,6 +147,34 @@ export function LogApp() {
       <footer className="flex h-7 shrink-0 items-center border-t border-[var(--os-border)] bg-[var(--os-panel)] px-3 text-[11px] text-neutral-500">
         {normalRows.length + anomalyRows.length} entri
       </footer>
+
+      {confirmOpen ? (
+        <div
+          role="alertdialog"
+          aria-modal="true"
+          aria-label="Konfirmasi bersihkan log"
+          className="absolute inset-0 z-10 flex items-center justify-center bg-black/60"
+        >
+          <div className="flex w-80 flex-col gap-5 border border-neutral-500 bg-[var(--os-panel)] p-5 text-xs text-neutral-200 shadow-[0_10px_30px_rgba(0,0,0,0.6)]">
+            <p className="leading-relaxed">
+              Hapus log_akses.csv secara permanen? Tindakan ini tidak dapat dibatalkan.
+            </p>
+            <div className="flex justify-end gap-2">
+              <button
+                type="button"
+                autoFocus
+                onClick={() => setConfirmOpen(false)}
+                className={ACTION_BTN}
+              >
+                [ Batal ]
+              </button>
+              <button type="button" onClick={handleConfirmClear} className={ACTION_BTN}>
+                [ Hapus ]
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

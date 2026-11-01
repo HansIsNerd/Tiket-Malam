@@ -1,8 +1,20 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Archive, Check, Inbox, Mail as MailIcon, Paperclip, Send, Trash2, X } from 'lucide-react';
+import type { FormEvent } from 'react';
+import {
+  Archive,
+  Check,
+  Inbox,
+  Mail as MailIcon,
+  Paperclip,
+  Pencil,
+  Send,
+  Trash2,
+  X,
+} from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useGameStore } from '@core/stores/gameStore';
 import { loadMailData } from '@core/services/dataLoader';
+import { triggerEnding } from '@core/services/endingService';
 import type { Mail } from '@core/types/mail';
 import { cx } from '@core/utils/cx';
 
@@ -24,6 +36,11 @@ const FOLDERS: readonly FolderMeta[] = [
 const OFFBOARDING_PDF = 'berita_acara_bagas.pdf';
 const NO_SENDER_LABEL = '(Tanpa Pengirim)';
 const NO_SUBJECT_LABEL = '(Tanpa Subjek)';
+const REPORT_ADDRESS = 'hr_pusat@nusadata.co.id';
+const ACTION_BTN =
+  'h-8 border border-neutral-500 bg-transparent px-4 text-xs font-semibold tracking-wider text-neutral-200 transition-colors hover:bg-white/10';
+const INPUT_CLASS =
+  'min-w-0 flex-1 border border-[var(--os-border)] bg-[var(--os-bg)] px-3 py-2 text-xs text-neutral-100 outline-none placeholder:text-neutral-500 focus:border-[var(--os-accent)]';
 
 function senderOf(mail: Mail): string {
   return mail.from.trim() === '' ? NO_SENDER_LABEL : mail.from;
@@ -124,6 +141,97 @@ function OffboardingPdf({ playerName, signed, onSign, onClose }: OffboardingPdfP
   );
 }
 
+interface ComposeDialogProps {
+  onClose: () => void;
+  onSend: (to: string) => string | null;
+}
+
+function ComposeDialog({ onClose, onSend }: ComposeDialogProps) {
+  const [to, setTo] = useState<string>('');
+  const [subject, setSubject] = useState<string>('');
+  const [body, setBody] = useState<string>('');
+  const [error, setError] = useState<string | null>(null);
+
+  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setError(onSend(to));
+  };
+
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label="Email baru"
+      className="absolute inset-0 z-20 flex items-center justify-center bg-black/60 p-4"
+    >
+      <form
+        onSubmit={handleSubmit}
+        className="flex max-h-full w-full max-w-xl flex-col border border-neutral-500 bg-[var(--os-panel)] shadow-[0_10px_30px_rgba(0,0,0,0.6)]"
+      >
+        <div className="flex h-9 shrink-0 items-center justify-between border-b border-[var(--os-border)] pl-3 text-xs text-neutral-100">
+          <span>Email Baru</span>
+          <button
+            type="button"
+            aria-label="Tutup"
+            onClick={onClose}
+            className="flex h-9 w-10 items-center justify-center transition-colors hover:bg-[#E81123] hover:text-white"
+          >
+            <X size={14} strokeWidth={1.5} />
+          </button>
+        </div>
+
+        <div className="flex flex-col gap-2 p-3">
+          <label className="flex items-center gap-2 text-xs text-neutral-400">
+            <span className="w-14 shrink-0">To:</span>
+            <input
+              type="text"
+              value={to}
+              onChange={(e) => {
+                setTo(e.target.value);
+                setError(null);
+              }}
+              autoFocus
+              autoComplete="off"
+              spellCheck={false}
+              className={INPUT_CLASS}
+            />
+          </label>
+          <label className="flex items-center gap-2 text-xs text-neutral-400">
+            <span className="w-14 shrink-0">Subjek:</span>
+            <input
+              type="text"
+              value={subject}
+              onChange={(e) => setSubject(e.target.value)}
+              autoComplete="off"
+              className={INPUT_CLASS}
+            />
+          </label>
+          <textarea
+            value={body}
+            onChange={(e) => setBody(e.target.value)}
+            rows={8}
+            className="chat-scroll w-full resize-none border border-[var(--os-border)] bg-[var(--os-bg)] px-3 py-2 text-xs leading-relaxed text-neutral-100 outline-none placeholder:text-neutral-500 focus:border-[var(--os-accent)]"
+          />
+          {error !== null ? (
+            <p role="alert" className="text-xs text-red-400">
+              {error}
+            </p>
+          ) : null}
+        </div>
+
+        <div className="flex shrink-0 items-center justify-end gap-2 border-t border-[var(--os-border)] px-3 py-3">
+          <button type="button" onClick={onClose} className={ACTION_BTN}>
+            [ Batal ]
+          </button>
+          <button type="submit" className={ACTION_BTN}>
+            [ Kirim ]
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+}
+
 export function MailApp() {
   const mailData = useGameStore((s) => s.mailData);
   const setMailData = useGameStore((s) => s.setMailData);
@@ -135,6 +243,7 @@ export function MailApp() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [readIds, setReadIds] = useState<ReadonlySet<string>>(new Set());
   const [pdfOpen, setPdfOpen] = useState<boolean>(false);
+  const [composeOpen, setComposeOpen] = useState<boolean>(false);
 
   useEffect(() => {
     if (mailData) return;
@@ -181,9 +290,26 @@ export function MailApp() {
     setPdfOpen(false);
   };
 
+  const handleSend = (to: string): string | null => {
+    if (to.trim().toLowerCase() === REPORT_ADDRESS) {
+      setComposeOpen(false);
+      triggerEnding('lapor');
+      return null;
+    }
+    return 'Gagal mengirim. Penerima tidak ditemukan.';
+  };
+
   return (
     <div className="relative flex h-full w-full bg-[var(--os-bg)] text-neutral-100">
       <aside className="flex w-[180px] shrink-0 flex-col border-r border-[var(--os-border)] bg-[var(--os-panel)] py-2">
+        <button
+          type="button"
+          onClick={() => setComposeOpen(true)}
+          className="mx-3 mb-2 flex items-center justify-center gap-2 border border-neutral-500 bg-transparent px-3 py-2 text-xs font-semibold tracking-wider text-neutral-200 transition-colors hover:bg-white/10"
+        >
+          <Pencil size={14} strokeWidth={1.75} />
+          Tulis Email
+        </button>
         {FOLDERS.map(({ id, label, icon: Icon }) => (
           <button
             key={id}
@@ -320,6 +446,10 @@ export function MailApp() {
           onSign={handleSign}
           onClose={() => setPdfOpen(false)}
         />
+      ) : null}
+
+      {composeOpen ? (
+        <ComposeDialog onClose={() => setComposeOpen(false)} onSend={handleSend} />
       ) : null}
     </div>
   );

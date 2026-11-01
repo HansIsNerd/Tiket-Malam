@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-export type EndingId = 'keluar';
+export type EndingId = 'lapor' | 'hapus' | 'keluar' | 'lanjut';
 
 interface EndingState {
   ending: EndingId | null;

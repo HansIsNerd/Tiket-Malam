@@ -21,9 +21,6 @@ const ACT_GATED_APPS: Record<string, number> = {
   cctv: 2,
 };
 
-const ENDING_KELUAR_FROM_ACT = 3;
-const TOAST_MS = 3500;
-const QUIT_MESSAGE = 'Sistem menolak perintah. Shift belum selesai.';
 const BTN =
   'h-9 border border-neutral-500 bg-transparent px-5 text-xs font-semibold tracking-wider text-neutral-200 transition-colors hover:bg-white/10';
 
@@ -66,15 +63,6 @@ export function StartMenu() {
 
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [confirmOpen, setConfirmOpen] = useState<boolean>(false);
-  const [toast, setToast] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (toast === null) return;
-    const timer = window.setTimeout(() => setToast(null), TOAST_MS);
-    return () => {
-      window.clearTimeout(timer);
-    };
-  }, [toast]);
 
   useEffect(() => {
     if (!isOpen) setSearchQuery('');
@@ -103,13 +91,7 @@ export function StartMenu() {
     setFlag('act1.playerTriedToQuit', true);
     setConfirmOpen(false);
     closeMenu();
-    // >>> START PATCH
-    if (useGameStore.getState().act >= ENDING_KELUAR_FROM_ACT) {
-      triggerEnding('keluar');
-      return;
-    }
-    // <<< END PATCH
-    setToast(QUIT_MESSAGE);
+    triggerEnding('keluar');
   };
 
   return (
@@ -251,23 +233,6 @@ export function StartMenu() {
           </div>
         </div>
       ) : null}
-
-      <AnimatePresence>
-        {toast !== null ? (
-          <motion.div
-            key="quit-toast"
-            role="status"
-            initial={{ opacity: 0, x: 24 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 24 }}
-            transition={{ duration: 0.2, ease: 'easeOut' }}
-            className="rounded-lg border border-white/10 bg-[#2A2A2E] px-4 py-3 text-xs text-neutral-100 shadow-2xl"
-            style={{ position: 'absolute', bottom: 64, right: 16, width: 288, zIndex: 10001 }}
-          >
-            {toast}
-          </motion.div>
-        ) : null}
-      </AnimatePresence>
     </>
   );
 }

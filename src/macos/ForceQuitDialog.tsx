@@ -44,6 +44,12 @@ export function ForceQuitDialog({ onClose }: ForceQuitDialogProps) {
     };
   }, [onClose]);
 
+  useEffect(() => {
+    if (forceQuitCount < PLAYER_ROW_THRESHOLD) return;
+    const { flags, setFlag } = useGameStore.getState();
+    if (!flags.mac.playerInForceQuit) setFlag('mac.playerInForceQuit', true);
+  }, [forceQuitCount]);
+
   const rows: ForceQuitRow[] = [
     { id: 'app_finder', label: 'Finder', notResponding: false, windowAppId: 'finder' },
     { id: 'app_notes', label: 'Notes', notResponding: false, windowAppId: 'notes' },

@@ -61,6 +61,7 @@ export interface MacFlags {
   whoRun: boolean;
   triedForceQuit03: boolean;
   forceQuitCount: number;
+  playerInForceQuit: boolean;
 }
 
 export interface Act3Flags {
@@ -226,6 +227,7 @@ export const useGameStore = create<GameState>()(
           whoRun: false,
           triedForceQuit03: false,
           forceQuitCount: 0,
+          playerInForceQuit: false,
         },
         act3: {
           started: false,

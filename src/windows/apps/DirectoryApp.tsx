@@ -2,8 +2,10 @@ import { useEffect, useState } from 'react';
 import { Users } from 'lucide-react';
 import { useGameStore } from '@core/stores/gameStore';
 import { loadDirectoryData } from '@core/services/dataLoader';
+import { triggerEnding } from '@core/services/endingService';
 import type { Employee, EmployeeStatus } from '@core/types/directory';
 import { cx } from '@core/utils/cx';
+import { ScreenSharingLogin } from '@windows/apps/ScreenSharingLogin';
 
 type DisplayStatus = EmployeeStatus | 'online';
 
@@ -31,9 +33,18 @@ interface ProfilePanelProps {
   displayName: string;
   status: DisplayStatus;
   blurred: boolean;
+  canOpenSession: boolean;
+  onOpenSession: () => void;
 }
 
-function ProfilePanel({ employee, displayName, status, blurred }: ProfilePanelProps) {
+function ProfilePanel({
+  employee,
+  displayName,
+  status,
+  blurred,
+  canOpenSession,
+  onOpenSession,
+}: ProfilePanelProps) {
   const initials = displayName
     .split(/\s+/)
     .map((p) => p.charAt(0))
@@ -80,6 +91,15 @@ function ProfilePanel({ employee, displayName, status, blurred }: ProfilePanelPr
           </dd>
         </div>
       </dl>
+      {canOpenSession ? (
+        <button
+          type="button"
+          onClick={onOpenSession}
+          className="h-8 border border-neutral-500 bg-transparent px-4 text-xs font-semibold tracking-wider text-neutral-200 transition-colors hover:bg-white/10"
+        >
+          [ Buka Sesi ]
+        </button>
+      ) : null}
     </div>
   );
 }
@@ -89,8 +109,10 @@ export function DirectoryApp() {
   const setDirectoryData = useGameStore((s) => s.setDirectoryData);
   const playerName = useGameStore((s) => s.playerName);
   const bagasContact = useGameStore((s) => s.flags.act2.e09BagasContact);
+  const playerInForceQuit = useGameStore((s) => s.flags.mac.playerInForceQuit);
   const setFlag = useGameStore((s) => s.setFlag);
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [sessionOpen, setSessionOpen] = useState<boolean>(false);
 
   useEffect(() => {
     if (directoryData) return;
@@ -124,7 +146,7 @@ export function DirectoryApp() {
   };
 
   return (
-    <div className="flex h-full w-full bg-[var(--os-bg)] text-neutral-100">
+    <div className="relative flex h-full w-full bg-[var(--os-bg)] text-neutral-100">
       <section className="flex min-w-0 flex-1 flex-col border-r border-[var(--os-border)]">
         <div
           className={cx(
@@ -184,9 +206,21 @@ export function DirectoryApp() {
             displayName={resolveName(active.name)}
             status={resolveStatus(active, bagasContact)}
             blurred={active.id === 'bagas_p' && !bagasContact}
+            canOpenSession={active.id === 'bagas_p' && playerInForceQuit}
+            onOpenSession={() => setSessionOpen(true)}
           />
         )}
       </section>
+
+      {sessionOpen ? (
+        <ScreenSharingLogin
+          onClose={() => setSessionOpen(false)}
+          onSuccess={() => {
+            setSessionOpen(false);
+            triggerEnding('lanjut');
+          }}
+        />
+      ) : null}
     </div>
   );
 }
