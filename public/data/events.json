@@ -170,6 +170,68 @@
           }
         }
       ]
+    },
+    {
+      "id": "e15_webcam_seen",
+      "once": true,
+      "condition": {
+        "type": "and",
+        "conditions": [
+          { "type": "flag", "path": "act2.e09BagasContact", "value": true },
+          { "type": "flag", "path": "act2.e15WebcamSeen", "value": true },
+          { "type": "not", "condition": { "type": "flag", "path": "act2.e15At" } }
+        ]
+      },
+      "actions": [
+        { "type": "mark_time", "path": "act2.e15At" }
+      ]
+    },
+    {
+      "id": "e16_remote_stuck",
+      "once": true,
+      "condition": {
+        "type": "and",
+        "conditions": [
+          { "type": "flag", "path": "act2.e15At" },
+          { "type": "minutes_since", "path": "act2.e15At", "minutes": 1 },
+          { "type": "not", "condition": { "type": "flag", "path": "act2.e16RemoteStuck", "value": true } },
+          { "type": "not", "condition": { "type": "flag", "path": "act2.e16RemoteReleased", "value": true } }
+        ]
+      },
+      "actions": [
+        { "type": "set_flag", "path": "act2.e16RemoteStuck", "value": true },
+        { "type": "mark_time", "path": "act2.e16At" }
+      ]
+    },
+    {
+      "id": "e16_remote_release",
+      "once": true,
+      "condition": {
+        "type": "and",
+        "conditions": [
+          { "type": "flag", "path": "act2.e16RemoteStuck", "value": true },
+          { "type": "not", "condition": { "type": "flag", "path": "act2.e16RemoteReleased", "value": true } },
+          { "type": "minutes_since", "path": "act2.e16At", "minutes": 6 }
+        ]
+      },
+      "actions": [
+        { "type": "set_flag", "path": "act2.e16RemoteReleased", "value": true }
+      ]
+    },
+    {
+      "id": "e17_webcam_shift",
+      "once": true,
+      "condition": {
+        "type": "and",
+        "conditions": [
+          { "type": "flag", "path": "act2.e16At" },
+          { "type": "minutes_since", "path": "act2.e16At", "minutes": 1 },
+          { "type": "not", "condition": { "type": "flag", "path": "act2.e17WebcamShift", "value": true } }
+        ]
+      },
+      "actions": [
+        { "type": "set_flag", "path": "act2.e17WebcamShift", "value": true }
+      ]
     }
   ]
 }

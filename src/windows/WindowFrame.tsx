@@ -2,6 +2,7 @@ import { useRef } from 'react';
 import type { CSSProperties, PointerEvent } from 'react';
 import { motion } from 'framer-motion';
 import { useUiStore } from '@core/stores/uiStore';
+import { useGameStore } from '@core/stores/gameStore';
 import type { Position, WindowInstance } from '@core/types';
 import { cx } from '@core/utils/cx';
 import { Copy, Minus, Square, X } from 'lucide-react';
@@ -59,11 +60,15 @@ export function WindowFrame({ window: win }: WindowFrameProps) {
   const moveWindow = useUiStore((s) => s.moveWindow);
   const minimizeWindow = useUiStore((s) => s.minimizeWindow);
   const toggleMaximize = useUiStore((s) => s.toggleMaximizeWindow);
+  const remoteStuck = useGameStore(
+    (s) => s.flags.act2.e16RemoteStuck && !s.flags.act2.e16RemoteReleased,
+  );
   const dragRef = useRef<DragState | null>(null);
 
   if (win.isMinimized || win.isHidden) return null;
 
   const AppIcon = getAppMeta(win.appId)?.icon;
+  const closeHidden = win.appId === 'remote' && remoteStuck;
 
   const handleTitlePointerDown = (e: PointerEvent<HTMLElement>) => {
     if (e.button !== 0 || win.isMaximized) return;
@@ -161,16 +166,20 @@ export function WindowFrame({ window: win }: WindowFrameProps) {
               <Square size={13} strokeWidth={1.5} />
             )}
           </button>
-          <button
-            type="button"
-            aria-label="Close"
-            onPointerDown={(e) => e.stopPropagation()}
-            onDoubleClick={(e) => e.stopPropagation()}
-            onClick={() => closeWindow(win.id)}
-            className="flex h-8 w-11 items-center justify-center transition-colors hover:bg-[#E81123] hover:text-white"
-          >
-            <X size={14} strokeWidth={1.5} />
-          </button>
+          {closeHidden ? (
+            <div aria-hidden="true" className="h-8 w-11" />
+          ) : (
+            <button
+              type="button"
+              aria-label="Close"
+              onPointerDown={(e) => e.stopPropagation()}
+              onDoubleClick={(e) => e.stopPropagation()}
+              onClick={() => closeWindow(win.id)}
+              className="flex h-8 w-11 items-center justify-center transition-colors hover:bg-[#E81123] hover:text-white"
+            >
+              <X size={14} strokeWidth={1.5} />
+            </button>
+          )}
         </div>
       </header>
       <div className="min-h-0 flex-1 overflow-auto">{renderApp(win.appId)}</div>

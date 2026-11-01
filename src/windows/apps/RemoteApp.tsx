@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { FileSpreadsheet, FileText, Folder, Lock, Loader2, X } from 'lucide-react';
 import { useGameStore } from '@core/stores/gameStore';
 import { cx } from '@core/utils/cx';
+import { RemoteWebcam } from '@windows/apps/RemoteWebcam';
 
 const REMOTE_HOST = 'L4-PC-01';
 const CONNECT_DELAY_MS = 3000;
@@ -14,10 +15,14 @@ type Phase = 'connecting' | 'connected';
 
 export function RemoteApp() {
   const setFlag = useGameStore((s) => s.setFlag);
+  const bagasContact = useGameStore((s) => s.flags.act2.e09BagasContact);
+  const chairShifted = useGameStore((s) => s.flags.act2.e17WebcamShift);
   const [phase, setPhase] = useState<Phase>('connecting');
   const [folderOpen, setFolderOpen] = useState<boolean>(false);
   const [viewerOpen, setViewerOpen] = useState<boolean>(false);
   const [deniedNotice, setDeniedNotice] = useState<boolean>(false);
+
+  const webcamVisible = phase === 'connected' && bagasContact;
 
   useEffect(() => {
     setFlag('act1.remoteOpened', true);
@@ -40,6 +45,12 @@ export function RemoteApp() {
       window.clearTimeout(timer);
     };
   }, [viewerOpen, setFlag]);
+
+  useEffect(() => {
+    if (!webcamVisible) return;
+    if (useGameStore.getState().flags.act2.e15WebcamSeen) return;
+    setFlag('act2.e15WebcamSeen', true);
+  }, [webcamVisible, setFlag]);
 
   if (phase === 'connecting') {
     return (
@@ -65,6 +76,8 @@ export function RemoteApp() {
           <span>arsip</span>
         </button>
       </div>
+
+      {webcamVisible ? <RemoteWebcam chairShifted={chairShifted} /> : null}
 
       <footer className="flex h-6 shrink-0 items-center border-t border-white/10 px-3 text-[10px] text-neutral-500">
         {`Remote: ${REMOTE_HOST}`}
