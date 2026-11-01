@@ -20,6 +20,7 @@ export function WindowsDesktopScene() {
   const fileData = useGameStore((s) => s.fileData);
   const setFileData = useGameStore((s) => s.setFileData);
   const e10Instruction = useGameStore((s) => s.flags.act2.e10Instruction);
+  const act3Started = useGameStore((s) => s.flags.act3.started);
   const [fading, setFading] = useState<boolean>(false);
   const [showEnd, setShowEnd] = useState<boolean>(false);
 
@@ -56,7 +57,7 @@ export function WindowsDesktopScene() {
   }, []);
 
   useEffect(() => {
-    if (!e10Instruction) {
+    if (!e10Instruction || act3Started) {
       setFading(false);
       setShowEnd(false);
       return;
@@ -70,7 +71,7 @@ export function WindowsDesktopScene() {
       window.clearTimeout(fadeTimer);
       window.clearTimeout(endTimer);
     };
-  }, [e10Instruction]);
+  }, [e10Instruction, act3Started]);
 
   return (
     <div className="relative h-full w-full overflow-hidden bg-[#000000] text-neutral-100">

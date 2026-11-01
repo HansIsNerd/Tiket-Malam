@@ -59,6 +59,12 @@ export interface MacFlags {
   psAuxRun: boolean;
   historyRead: boolean;
   whoRun: boolean;
+  triedForceQuit03: boolean;
+  forceQuitCount: number;
+}
+
+export interface Act3Flags {
+  started: boolean;
 }
 
 export interface UiFlags {
@@ -69,6 +75,7 @@ export interface Flags {
   act1: Act1Flags;
   act2: Act2Flags;
   mac: MacFlags;
+  act3: Act3Flags;
   ui: UiFlags;
 }
 
@@ -217,6 +224,11 @@ export const useGameStore = create<GameState>()(
           psAuxRun: false,
           historyRead: false,
           whoRun: false,
+          triedForceQuit03: false,
+          forceQuitCount: 0,
+        },
+        act3: {
+          started: false,
         },
         ui: {
           desktopTheme: 'light',
@@ -274,6 +286,7 @@ export const useGameStore = create<GameState>()(
             act1: { ...current.flags.act1, ...saved.flags?.act1 },
             act2: { ...current.flags.act2, ...saved.flags?.act2 },
             mac: { ...current.flags.mac, ...saved.flags?.mac },
+            act3: { ...current.flags.act3, ...saved.flags?.act3 },
             ui: { ...current.flags.ui, ...saved.flags?.ui },
           },
         };

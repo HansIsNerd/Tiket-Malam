@@ -8,6 +8,7 @@ import { cx } from '@core/utils/cx';
 import { MacFinderApp } from '@macos/apps/MacFinderApp';
 import { MacNotesApp } from '@macos/apps/MacNotesApp';
 import { MacTerminalApp } from '@macos/apps/MacTerminalApp';
+import { MacMessagesApp } from '@macos/apps/MacMessagesApp';
 
 interface MacWindowFrameProps {
   window: MacWindowInstance;
@@ -34,7 +35,7 @@ function renderMacApp(appId: string) {
     case 'terminal':
       return <MacTerminalApp />;
     case 'messages':
-      return <p className="p-4 text-sm text-neutral-700">Messages</p>;
+      return <MacMessagesApp />;
     default:
       return null;
   }

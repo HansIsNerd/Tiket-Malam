@@ -1,9 +1,11 @@
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Command, Folder, MessageCircle, StickyNote, Terminal } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useGameStore } from '@core/stores/gameStore';
 import { useUiStore } from '@core/stores/uiStore';
 import { cx } from '@core/utils/cx';
+import { ForceQuitDialog } from '@macos/ForceQuitDialog';
 
 const WALLPAPER_URL =
   'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&q=80&w=1920';
@@ -77,6 +79,28 @@ export function MacDesktop() {
   const timeCurrent = useGameStore((s) => s.timeCurrent);
   const macWindows = useUiStore((s) => s.macWindows);
   const openMacWindow = useUiStore((s) => s.openMacWindow);
+  const [appleMenuOpen, setAppleMenuOpen] = useState<boolean>(false);
+  const [forceQuitOpen, setForceQuitOpen] = useState<boolean>(false);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const cmd = e.metaKey || e.ctrlKey;
+      if (cmd && e.altKey && e.key === 'Escape') {
+        e.preventDefault();
+        setAppleMenuOpen(false);
+        setForceQuitOpen(true);
+      }
+    };
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('keydown', onKey);
+    };
+  }, []);
+
+  const openForceQuit = () => {
+    setAppleMenuOpen(false);
+    setForceQuitOpen(true);
+  };
 
   return (
     <div className="absolute inset-0">
@@ -91,11 +115,49 @@ export function MacDesktop() {
         style={{ height: MENU_BAR_HEIGHT }}
       >
         <div className="flex items-center gap-5">
-          <Command size={14} strokeWidth={2} aria-label="Apple" />
+          <button
+            type="button"
+            aria-label="Apple"
+            aria-expanded={appleMenuOpen}
+            onClick={() => setAppleMenuOpen((v) => !v)}
+            className={cx(
+              'flex h-5 w-6 items-center justify-center rounded transition-colors hover:bg-white/20',
+              appleMenuOpen && 'bg-white/20',
+            )}
+          >
+            <Command size={14} strokeWidth={2} />
+          </button>
           <span className="font-semibold">Finder</span>
         </div>
         <span className="tabular-nums">{formatMacClock(timeCurrent)}</span>
       </header>
+
+      {appleMenuOpen ? (
+        <>
+          <div
+            aria-hidden="true"
+            onClick={() => setAppleMenuOpen(false)}
+            className="fixed inset-0 z-[9000]"
+          />
+          <ul
+            role="menu"
+            className="absolute left-3 z-[9002] w-56 rounded-md border border-white/20 bg-neutral-800/90 py-1 text-[13px] text-white shadow-2xl backdrop-blur-xl"
+            style={{ top: MENU_BAR_HEIGHT }}
+          >
+            <li>
+              <button
+                type="button"
+                role="menuitem"
+                onClick={openForceQuit}
+                className="flex w-full items-center justify-between px-3 py-1 text-left hover:bg-[#1F72D8]"
+              >
+                <span>Force Quit...</span>
+                <span className="text-[11px] text-white/60">⌥⌘⎋</span>
+              </button>
+            </li>
+          </ul>
+        </>
+      ) : null}
 
       <nav
         aria-label="Dock"
@@ -132,6 +194,8 @@ export function MacDesktop() {
           })}
         </ul>
       </nav>
+
+      {forceQuitOpen ? <ForceQuitDialog onClose={() => setForceQuitOpen(false)} /> : null}
     </div>
   );
 }
