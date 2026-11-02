@@ -10,15 +10,24 @@ const MAX_PASSES = 10;
 const DAY_MINUTES = 24 * 60;
 const SHIFT_WRAP_MINUTES = 12 * 60;
 const IDLE_NUDGE_MINUTES = 2;
+// >>> START PATCH
+const WORK_NUDGE_MINUTES = 2;
+const WORK_NUDGE_MAX = 3;
+const TICKET_FLAGS = [
+  'ticket4468Done',
+  'ticket4469Done',
+  'ticket4470Done',
+] as const;
+// <<< END PATCH
 const SCREEN_SHARING_SELECTOR = 'button[aria-label="Screen Sharing"]';
 const CHAT_WINDOW = { appId: 'chat', title: 'Chat', size: { width: 900, height: 500 } } as const;
 
 type GameSnapshot = ReturnType<typeof useGameStore.getState>;
 
 interface DartoNudge {
-  threadId: string;
+  threadId: string | null;
   message: string;
-  sentFlag: FlagPath;
+  sentFlag: FlagPath | null;
 }
 
 const TICKET_NUDGE: DartoNudge = {
@@ -33,11 +42,24 @@ const REMOTE_NUDGE: DartoNudge = {
   sentFlag: 'act1.dartoNudgeRemoteSent',
 };
 
+// >>> START PATCH
+const WORK_NUDGE: DartoNudge = {
+  threadId: null,
+  message: 'Mas, jangan bengong. Tiket di antrean belum beres semua.',
+  sentFlag: null,
+};
+// <<< END PATCH
+
 let loadedEvents: GameEvent[] = [];
 const firedOnce = new Set<string>();
 let evaluating = false;
 let pending = false;
 let idleSince = 0;
+// >>> START PATCH
+let workSince = 0;
+let workNudgeCount = 0;
+let lastTicketsDone = 0;
+// <<< END PATCH
 
 function toShiftMinutes(time: string): number {
   const match = /^\s*(\d{1,2}):(\d{2})\s*$/.exec(time);
@@ -187,6 +209,47 @@ function resetIdle(): void {
   if (!Number.isNaN(now)) idleSince = now;
 }
 
+// >>> START PATCH
+function countTicketsDone(state: GameSnapshot): number {
+  const a1 = state.flags.act1;
+  return TICKET_FLAGS.filter((key) => a1[key]).length;
+}
+
+function resetWork(): void {
+  const state = useGameStore.getState();
+  const now = toShiftMinutes(state.timeCurrent);
+  if (!Number.isNaN(now)) workSince = now;
+  lastTicketsDone = countTicketsDone(state);
+}
+
+function checkWorkNudge(state: GameSnapshot, now: number): void {
+  if (state.act !== 1) return;
+  if (useUiStore.getState().scene !== 'windows') {
+    workSince = now;
+    return;
+  }
+  const done = countTicketsDone(state);
+  if (done >= TICKET_FLAGS.length) {
+    lastTicketsDone = done;
+    return;
+  }
+  if (done !== lastTicketsDone) {
+    lastTicketsDone = done;
+    workSince = now;
+    return;
+  }
+  if (now < workSince) {
+    workSince = now;
+    return;
+  }
+  if (now - workSince < WORK_NUDGE_MINUTES) return;
+  workSince = now;
+  if (workNudgeCount >= WORK_NUDGE_MAX) return;
+  workNudgeCount += 1;
+  sendDartoNudge(WORK_NUDGE);
+}
+// <<< END PATCH
+
 function pickNudge(state: GameSnapshot): DartoNudge | null {
   if (state.act !== 1) return null;
   if (!state.flags.act1.ticket4471Incoming) return null;
@@ -197,8 +260,14 @@ function pickNudge(state: GameSnapshot): DartoNudge | null {
 }
 
 function sendDartoNudge(nudge: DartoNudge): void {
-  useGameStore.getState().setFlag(nudge.sentFlag, true as never);
-  useUiStore.getState().unlockChatThread(nudge.threadId);
+  // >>> START PATCH
+  if (nudge.sentFlag !== null) {
+    useGameStore.getState().setFlag(nudge.sentFlag, true as never);
+  }
+  if (nudge.threadId !== null) {
+    useUiStore.getState().unlockChatThread(nudge.threadId);
+  }
+  // <<< END PATCH
   useNotificationStore.getState().addNotification({
     title: 'Pak Darto',
     message: nudge.message,
@@ -210,6 +279,9 @@ function checkIdle(): void {
   const state = useGameStore.getState();
   const now = toShiftMinutes(state.timeCurrent);
   if (Number.isNaN(now)) return;
+  // >>> START PATCH
+  checkWorkNudge(state, now);
+  // <<< END PATCH
   if (hasVisibleWindow() || now < idleSince) {
     idleSince = now;
     return;
@@ -253,6 +325,12 @@ export function startEventEngine(): () => void {
   evaluating = false;
   pending = false;
   idleSince = 0;
+  // >>> START PATCH
+  workSince = 0;
+  workNudgeCount = 0;
+  lastTicketsDone = 0;
+  resetWork();
+  // <<< END PATCH
   resetIdle();
 
   const unsubscribeGame = useGameStore.subscribe((state, prev) => {
@@ -262,6 +340,10 @@ export function startEventEngine(): () => void {
 
   const unsubscribeUi = useUiStore.subscribe((state, prev) => {
     if (state.windows !== prev.windows) resetIdle();
+    if (state.scene !== prev.scene && state.scene === 'windows') {
+      resetIdle();
+      resetWork();
+    }
   });
 
   document.addEventListener('click', handleScreenSharingClick);

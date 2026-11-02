@@ -25,6 +25,9 @@ const CONNECTING_MS = 1400;
 const FLICKER_MS = 1200;
 
 const ERROR_ROW_LABEL = 'SYSTEM_FAILURE_AT_L4';
+// >>> START PATCH
+const RESTORED_ROW_LABEL = 'SYSTEM_RESTORED';
+// <<< END PATCH
 const WORDS: readonly CompletionWord[] = ['restart', 'stop', 'delete'];
 const DENIED_TEXT = 'PERMISSION DENIED. PROSES 03:00 DILINDUNGI.';
 const CONNECTING_TEXT = 'MENGHUBUNGI SERVER...';
@@ -223,6 +226,9 @@ export function LogApp() {
   const playerName = useGameStore((s) => s.playerName);
   const scrollCount = useGameStore((s) => s.flags.act2.e02ScrollCount);
   const logRead = useGameStore((s) => s.flags.act2.e02LogRead);
+  // >>> START PATCH
+  const serverPatched = useGameStore((s) => s.flags.act1.serverPatched);
+  // <<< END PATCH
   const setFlag = useGameStore((s) => s.setFlag);
   const lastTopRef = useRef<number>(0);
   const lastAddRef = useRef<number>(0);
@@ -241,6 +247,9 @@ export function LogApp() {
   const anomalyRows = Array.from({ length: scrollCount }, () => ANOMALY_ROW);
   const showErrorRow = logRead;
   const resolved = restartRows.length > 0;
+  // >>> START PATCH
+  const restored = resolved || serverPatched;
+  // <<< END PATCH
 
   const handleScroll = (e: UIEvent<HTMLDivElement>) => {
     const el = e.currentTarget;
@@ -277,7 +286,7 @@ export function LogApp() {
   };
 
   const openCompletion = () => {
-    if (resolved) return;
+    if (restored) return;
     setCompletionOpen(true);
   };
 
@@ -336,23 +345,25 @@ export function LogApp() {
                 </tr>
               ))}
               {showErrorRow ? (
+                // >>> START PATCH
                 <tr
-                  role={resolved ? undefined : 'button'}
-                  tabIndex={resolved ? -1 : 0}
-                  title={resolved ? undefined : 'Klik untuk memeriksa'}
-                  onClick={resolved ? undefined : openCompletion}
-                  onKeyDown={resolved ? undefined : handleErrorRowKey}
+                  role={restored ? undefined : 'button'}
+                  tabIndex={restored ? -1 : 0}
+                  title={restored ? undefined : 'Klik untuk memeriksa'}
+                  onClick={restored ? undefined : openCompletion}
+                  onKeyDown={restored ? undefined : handleErrorRowKey}
                   className={cx(
                     'border-b border-[var(--os-border)] transition-colors duration-700',
-                    resolved
+                    restored
                       ? 'cursor-default bg-transparent text-green-500'
                       : 'cursor-pointer bg-red-950/30 text-red-400 hover:bg-red-950/50',
                   )}
                 >
                   <td colSpan={4} className="px-4 py-2.5 font-semibold tracking-wider">
-                    {ERROR_ROW_LABEL}
+                    {restored ? RESTORED_ROW_LABEL : ERROR_ROW_LABEL}
                   </td>
                 </tr>
+                // <<< END PATCH
               ) : null}
               {anomalyRows.map((row, i) => (
                 <motion.tr

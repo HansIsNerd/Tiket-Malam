@@ -80,13 +80,25 @@ export function PasswordResetGame({ onComplete, onClose }: PasswordResetGameProp
             [ Generate Random Password ]
           </button>
 
+          {/* >>> START PATCH */}
           <div
-            className="flex h-12 items-center justify-center border border-[var(--os-border)] bg-black text-lg tracking-widest text-neutral-100"
-            style={{ fontFamily: MONO_STACK }}
+            className="flex h-12 select-none items-center justify-center border border-[var(--os-border)] bg-black text-lg tracking-widest text-neutral-100"
+            style={{
+              fontFamily: MONO_STACK,
+              userSelect: 'none',
+              WebkitUserSelect: 'none',
+              WebkitTouchCallout: 'none',
+            }}
             aria-live="polite"
+            onCopy={(e) => e.preventDefault()}
+            onCut={(e) => e.preventDefault()}
+            onContextMenu={(e) => e.preventDefault()}
+            onDragStart={(e) => e.preventDefault()}
+            onMouseDown={(e) => e.preventDefault()}
           >
             {generated ?? '-- --- --'}
           </div>
+          {/* <<< END PATCH */}
 
           <label className="flex flex-col gap-1 text-[11px] uppercase tracking-wider text-neutral-500">
             Ketik ulang password
@@ -97,6 +109,10 @@ export function PasswordResetGame({ onComplete, onClose }: PasswordResetGameProp
                 setTyped(e.target.value);
                 setError(false);
               }}
+              // >>> START PATCH
+              onPaste={(e) => e.preventDefault()}
+              onDrop={(e) => e.preventDefault()}
+              // <<< END PATCH
               disabled={generated === null}
               autoComplete="off"
               spellCheck={false}

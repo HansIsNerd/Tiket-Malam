@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import type { DragEvent } from 'react';
+import type { CSSProperties, DragEvent } from 'react';
 import { Check, Server, X } from 'lucide-react';
 import { cx } from '@core/utils/cx';
 
@@ -14,12 +14,12 @@ interface ColorMeta {
 type RebootPhase = 'idle' | 'rebooting' | 'done';
 
 const ALL_COLORS: readonly ColorMeta[] = [
-  { id: 'red', label: 'Merah', hex: '#DC2626' },
-  { id: 'blue', label: 'Biru', hex: '#2563EB' },
-  { id: 'green', label: 'Hijau', hex: '#16A34A' },
-  { id: 'yellow', label: 'Kuning', hex: '#EAB308' },
-  { id: 'purple', label: 'Ungu', hex: '#9333EA' },
-  { id: 'orange', label: 'Oranye', hex: '#EA580C' },
+  { id: 'red', label: 'MERAH', hex: '#FF3B3B' },
+  { id: 'blue', label: 'BIRU', hex: '#3B82FF' },
+  { id: 'green', label: 'HIJAU', hex: '#39FF14' },
+  { id: 'yellow', label: 'KUNING', hex: '#FFE600' },
+  { id: 'purple', label: 'UNGU', hex: '#B14BFF' },
+  { id: 'orange', label: 'ORANYE', hex: '#FF8A00' },
 ];
 
 const BASIC_COLOR_COUNT = 4;
@@ -27,9 +27,13 @@ const COMPLETE_DELAY_MS = 700;
 const REBOOT_MS = 3000;
 const REBOOT_DONE_DELAY_MS = 1500;
 const ERROR_RESET_MS = 1200;
-const ERROR_TEXT = 'Warna tidak cocok.';
+const ERROR_TEXT = 'ERR: COLOR_MISMATCH';
 const RESTORED_TEXT = 'SIGNAL RESTORED';
 const DEFAULT_TITLE = 'server_rack.exe';
+const NEON = '#39FF14';
+const MONO_STACK = "'Courier New', Courier, Consolas, monospace";
+
+const GLOW_TEXT: CSSProperties = { textShadow: `0 0 6px ${NEON}88` };
 
 function shuffle<T>(items: readonly T[]): T[] {
   const copy = [...items];
@@ -198,13 +202,16 @@ export function ServerPatchGame({
   };
 
   let statusText = error ?? '';
-  let statusClass = 'text-red-400';
+  let statusClass = 'text-red-500';
   if (isTicket && rebootPhase === 'done') {
     statusText = RESTORED_TEXT;
-    statusClass = 'font-semibold text-emerald-400';
+    statusClass = 'font-semibold text-[#39FF14]';
   } else if (isTicket && allConnected && successMessage !== undefined && rebootPhase === 'idle') {
     statusText = successMessage;
-    statusClass = 'font-semibold text-emerald-400';
+    statusClass = 'font-semibold text-[#39FF14]';
+  } else if (!isTicket && allConnected) {
+    statusText = 'ALL_PORTS_LINKED';
+    statusClass = 'font-semibold text-[#39FF14]';
   }
 
   return (
@@ -212,14 +219,26 @@ export function ServerPatchGame({
       role="dialog"
       aria-modal="true"
       aria-label={heading}
-      className="absolute inset-0 z-30 flex items-center justify-center bg-black/60 p-4"
+      className="absolute inset-0 z-30 flex items-center justify-center bg-black/80 p-4"
+      style={{ fontFamily: MONO_STACK }}
     >
-      <div className="flex max-h-full w-full max-w-lg flex-col overflow-y-auto border border-neutral-500 bg-[var(--os-panel)] shadow-[0_10px_30px_rgba(0,0,0,0.6)]">
-        <div className="flex h-9 shrink-0 items-center justify-between border-b border-[var(--os-border)] pl-3 text-xs text-neutral-100">
+      <div
+        className="flex max-h-full w-full max-w-lg flex-col overflow-y-auto border bg-black"
+        style={{
+          borderColor: `${NEON}99`,
+          boxShadow: `0 0 24px ${NEON}33, inset 0 0 40px ${NEON}0D`,
+        }}
+      >
+        <div
+          className="flex h-9 shrink-0 items-center justify-between border-b pl-3 text-xs"
+          style={{ borderColor: `${NEON}55`, color: NEON, ...GLOW_TEXT }}
+        >
           <span className="flex min-w-0 items-center gap-2">
             <Server size={14} strokeWidth={1.5} className="shrink-0" />
             <span className="truncate">
-              {isTicket ? `${heading} — Tahap ${stageLabel}/2` : heading}
+              {isTicket
+                ? `root@rack:~# ${heading} [${stageLabel}/2]`
+                : `root@rack:~# ${heading}`}
             </span>
           </span>
           <button
@@ -234,15 +253,22 @@ export function ServerPatchGame({
         </div>
 
         <div className="flex flex-col gap-4 p-4">
-          <p className="text-xs text-neutral-400">
-            Sambungkan setiap kabel ke port dengan warna yang sama.
+          <p className="text-[11px]" style={{ color: `${NEON}CC` }}>
+            {'> patch --match-color <cable> <port>'}
+            <span className="end-cursor-blink">_</span>
           </p>
 
-          <div className="grid grid-cols-2 gap-8">
+          <div className="grid grid-cols-2 gap-6">
             <div className="flex flex-col gap-2">
-              <h3 className="text-[10px] uppercase tracking-wider text-neutral-500">Port</h3>
-              {colors.map((port) => {
+              <h3
+                className="border-b pb-1 text-[10px] uppercase tracking-[0.25em]"
+                style={{ borderColor: `${NEON}33`, color: `${NEON}99` }}
+              >
+                [ PORT ]
+              </h3>
+              {colors.map((port, idx) => {
                 const done = connected[port.id];
+                const armed = selected !== null && !done;
                 return (
                   <button
                     key={port.id}
@@ -252,27 +278,43 @@ export function ServerPatchGame({
                     onDrop={(e) => handleDrop(e, port.id)}
                     aria-label={`Port ${port.label}${done ? ' terhubung' : ''}`}
                     className={cx(
-                      'flex h-10 items-center gap-3 border bg-[var(--os-bg)] px-3 text-left text-xs text-neutral-200 transition-colors',
-                      done
-                        ? 'border-emerald-500/60'
-                        : selected !== null
-                          ? 'border-neutral-300 hover:bg-white/10'
-                          : 'border-[var(--os-border)]',
+                      'flex h-10 items-center gap-3 border bg-black px-3 text-left text-[11px] transition-all',
+                      armed && 'hover:bg-[#39FF14]/10',
                     )}
+                    style={{
+                      borderColor: done ? NEON : armed ? `${NEON}AA` : `${NEON}33`,
+                      color: done ? NEON : `${NEON}99`,
+                      boxShadow: done ? `0 0 10px ${NEON}88, inset 0 0 8px ${NEON}33` : undefined,
+                    }}
                   >
                     <span
-                      className="h-4 w-4 shrink-0 rounded-full ring-2 ring-black/40"
-                      style={{ backgroundColor: port.hex }}
+                      aria-hidden="true"
+                      className={cx('h-2.5 w-2.5 shrink-0 rounded-full', done && 'animate-pulse')}
+                      style={{
+                        backgroundColor: done ? NEON : '#1a1a1a',
+                        boxShadow: done ? `0 0 8px 2px ${NEON}` : 'inset 0 0 0 1px #333',
+                      }}
+                    />
+                    <span className="tabular-nums opacity-60">{`P${idx + 1}`}</span>
+                    <span
+                      aria-hidden="true"
+                      className="h-3 w-3 shrink-0 border"
+                      style={{ backgroundColor: port.hex, borderColor: '#000' }}
                     />
                     <span className="flex-1 truncate">{port.label}</span>
-                    {done ? <Check size={14} strokeWidth={2.5} className="text-emerald-500" /> : null}
+                    {done ? <Check size={14} strokeWidth={2.5} style={{ color: NEON }} /> : null}
                   </button>
                 );
               })}
             </div>
 
             <div className="flex flex-col gap-2">
-              <h3 className="text-[10px] uppercase tracking-wider text-neutral-500">Kabel</h3>
+              <h3
+                className="border-b pb-1 text-[10px] uppercase tracking-[0.25em]"
+                style={{ borderColor: `${NEON}33`, color: `${NEON}99` }}
+              >
+                [ KABEL ]
+              </h3>
               {cables.map((cable) => {
                 const done = connected[cable.id];
                 const isSelected = selected === cable.id;
@@ -288,17 +330,22 @@ export function ServerPatchGame({
                     aria-label={`Kabel ${cable.label}${done ? ' terpasang' : ''}`}
                     aria-pressed={isSelected}
                     className={cx(
-                      'flex h-10 items-center gap-3 border bg-[var(--os-bg)] px-3 text-left text-xs text-neutral-200 transition-colors',
-                      done
-                        ? 'cursor-default border-[var(--os-border)] opacity-30'
-                        : isSelected
-                          ? 'cursor-grab border-white bg-white/10'
-                          : 'cursor-grab border-[var(--os-border)] hover:bg-white/10',
+                      'flex h-10 items-center gap-3 border bg-black px-3 text-left text-[11px] transition-all',
+                      done ? 'cursor-default opacity-30' : 'cursor-grab hover:bg-[#39FF14]/10',
                     )}
+                    style={{
+                      borderColor: isSelected ? NEON : `${NEON}33`,
+                      color: `${NEON}CC`,
+                      boxShadow: isSelected ? `0 0 10px ${NEON}88` : undefined,
+                    }}
                   >
                     <span
-                      className="h-2 w-8 shrink-0 rounded-full"
-                      style={{ backgroundColor: cable.hex }}
+                      aria-hidden="true"
+                      className="h-1.5 w-8 shrink-0 rounded-full"
+                      style={{
+                        backgroundColor: cable.hex,
+                        boxShadow: `0 0 6px ${cable.hex}`,
+                      }}
                     />
                     <span className="flex-1 truncate">{cable.label}</span>
                   </button>
@@ -308,26 +355,37 @@ export function ServerPatchGame({
           </div>
 
           {isTicket && allConnected ? (
-            <div className="flex flex-col gap-2 border-t border-[var(--os-border)] pt-4">
+            <div
+              className="flex flex-col gap-2 border-t pt-4"
+              style={{ borderColor: `${NEON}33` }}
+            >
               {rebootPhase === 'idle' ? (
                 <button
                   type="button"
                   onClick={handleReboot}
-                  className="h-10 bg-red-600 px-4 text-xs font-bold tracking-wider text-white transition-colors hover:bg-red-500"
+                  className="h-10 border border-red-500 bg-black px-4 text-xs font-bold tracking-[0.2em] text-red-500 transition-colors hover:bg-red-600 hover:text-white"
+                  style={{ boxShadow: '0 0 12px rgba(239,68,68,0.45)' }}
                 >
-                  REBOOT DEVICE
+                  $ sudo reboot --device
                 </button>
               ) : null}
               {rebootPhase === 'rebooting' ? (
                 <div role="status" className="flex flex-col gap-1.5">
-                  <div className="flex items-center justify-between text-[11px] text-neutral-400">
+                  <div
+                    className="flex items-center justify-between text-[11px]"
+                    style={{ color: `${NEON}CC` }}
+                  >
                     <span>Rebooting device...</span>
                     <span className="tabular-nums">{Math.floor(progress)}%</span>
                   </div>
-                  <div className="h-2 w-full overflow-hidden bg-black/60">
+                  <div className="h-2 w-full overflow-hidden border" style={{ borderColor: `${NEON}55` }}>
                     <div
-                      className="h-full bg-red-500"
-                      style={{ width: `${progress}%` }}
+                      className="h-full"
+                      style={{
+                        width: `${progress}%`,
+                        backgroundColor: NEON,
+                        boxShadow: `0 0 8px ${NEON}`,
+                      }}
                     />
                   </div>
                 </div>
@@ -335,12 +393,15 @@ export function ServerPatchGame({
             </div>
           ) : null}
 
-          <div className="flex h-5 items-center justify-between text-[11px]">
-            <span role="alert" className={statusClass}>
+          <div
+            className="flex h-5 items-center justify-between border-t pt-3 text-[11px]"
+            style={{ borderColor: `${NEON}22` }}
+          >
+            <span role="alert" className={statusClass} style={statusClass.includes('39FF14') ? GLOW_TEXT : undefined}>
               {statusText}
             </span>
-            <span className="tabular-nums text-neutral-500">
-              {connectedCount}/{colors.length}
+            <span className="tabular-nums" style={{ color: `${NEON}99` }}>
+              LINK {connectedCount}/{colors.length}
             </span>
           </div>
         </div>
