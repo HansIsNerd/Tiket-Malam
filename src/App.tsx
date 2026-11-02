@@ -8,6 +8,8 @@ import { ContentWarningScene } from '@scenes/ContentWarningScene';
 import { MainMenuScene } from '@scenes/MainMenuScene';
 import { BootScene } from '@scenes/BootScene';
 import { WindowsDesktopScene } from '@scenes/WindowsDesktopScene';
+import { EndingScene } from '@scenes/EndingScene';
+import { OrientationLock } from '../src/components/OrientationLock';
 
 const SCENE_TRANSITION = { duration: 0.5, ease: 'easeInOut' } as const;
 
@@ -21,6 +23,8 @@ function renderScene(scene: string) {
       return <BootScene />;
     case 'windows':
       return <WindowsDesktopScene />;
+    case 'ending':
+      return <EndingScene />;
     default:
       return null;
   }
@@ -52,6 +56,7 @@ export default function App() {
 
   return (
     <div className="h-screen w-screen overflow-hidden bg-black">
+      <OrientationLock />
       <AnimatePresence mode="wait" initial={false}>
         {content ? (
           <motion.div
