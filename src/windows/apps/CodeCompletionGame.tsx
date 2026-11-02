@@ -1,34 +1,100 @@
 import { useEffect, useRef, useState } from 'react';
-import { motion } from 'framer-motion';
 import { X } from 'lucide-react';
 import { cx } from '@core/utils/cx';
 
 type CompletionWord = 'stop' | 'restart' | 'delete';
-type Phase = 'choose' | 'error' | 'loading' | 'success';
+type Phase = 'typing' | 'choose' | 'error' | 'executing' | 'success';
 
 const WORDS: readonly CompletionWord[] = ['stop', 'restart', 'delete'];
 const CORRECT_WORD: CompletionWord = 'restart';
-const LOADING_MS = 1800;
-const SUCCESS_MS = 900;
 const MONO_STACK = "'Courier New', Courier, Consolas, monospace";
+const COMMAND_PREFIX = '> systemctl ';
+const COMMAND_SUFFIX = ' vpn-service';
+const COMMAND_FULL = `${COMMAND_PREFIX}status${COMMAND_SUFFIX}`;
+const TYPE_INTERVAL_MS = 55;
+const TYPE_START_DELAY_MS = 400;
+const LINE_INTERVAL_MS = 500;
+const CLOSE_AFTER_SUCCESS_MS = 1200;
 const ACTION_BTN =
   'h-7 border border-neutral-500 bg-transparent px-3 text-[11px] font-semibold tracking-wider text-neutral-200 transition-colors hover:bg-white/10';
+
+interface ExecLine {
+  tag: 'plain' | 'ok' | 'success';
+  text: string;
+}
+
+const EXEC_LINES: readonly ExecLine[] = [
+  { tag: 'plain', text: '> executing command...' },
+  { tag: 'ok', text: 'Stopping VPN Daemon...' },
+  { tag: 'ok', text: 'Clearing socket buffers...' },
+  { tag: 'ok', text: 'Starting VPN Daemon...' },
+  { tag: 'success', text: 'VPN RESTORED.' },
+];
 
 interface CodeCompletionGameProps {
   onComplete: () => void;
   onClose: () => void;
 }
 
+function renderExecLine(line: ExecLine, index: number) {
+  if (line.tag === 'plain') {
+    return (
+      <p key={index} className="text-neutral-400">
+        {line.text}
+      </p>
+    );
+  }
+  if (line.tag === 'ok') {
+    return (
+      <p key={index} className="break-all">
+        <span className="font-semibold text-emerald-500">{'[ OK ]'}</span>
+        {` ${line.text}`}
+      </p>
+    );
+  }
+  return (
+    <p key={index} className="break-all font-semibold text-emerald-400">
+      {`[ SUCCESS ] ${line.text}`}
+    </p>
+  );
+}
+
 export function CodeCompletionGame({ onComplete, onClose }: CodeCompletionGameProps) {
-  const [phase, setPhase] = useState<Phase>('choose');
+  const [phase, setPhase] = useState<Phase>('typing');
   const [chosen, setChosen] = useState<CompletionWord | null>(null);
+  const [typedCount, setTypedCount] = useState<number>(0);
+  const [execCount, setExecCount] = useState<number>(0);
   const timersRef = useRef<number[]>([]);
   const completedRef = useRef<boolean>(false);
 
   useEffect(() => {
     const timers = timersRef.current;
     return () => {
-      timers.forEach((t) => window.clearTimeout(t));
+      timers.forEach((t) => {
+        window.clearTimeout(t);
+        window.clearInterval(t);
+      });
+    };
+  }, []);
+
+  useEffect(() => {
+    let interval: number | null = null;
+    const start = window.setTimeout(() => {
+      interval = window.setInterval(() => {
+        setTypedCount((c) => {
+          const next = c + 1;
+          if (next >= COMMAND_FULL.length && interval !== null) {
+            window.clearInterval(interval);
+            interval = null;
+            setPhase((p) => (p === 'typing' ? 'choose' : p));
+          }
+          return Math.min(next, COMMAND_FULL.length);
+        });
+      }, TYPE_INTERVAL_MS);
+    }, TYPE_START_DELAY_MS);
+    return () => {
+      window.clearTimeout(start);
+      if (interval !== null) window.clearInterval(interval);
     };
   }, []);
 
@@ -37,23 +103,32 @@ export function CodeCompletionGame({ onComplete, onClose }: CodeCompletionGamePr
   };
 
   const handlePick = (word: CompletionWord) => {
-    if (phase === 'loading' || phase === 'success') return;
+    if (phase !== 'choose' && phase !== 'error') return;
     setChosen(word);
     if (word !== CORRECT_WORD) {
       setPhase('error');
       return;
     }
-    setPhase('loading');
-    schedule(() => setPhase('success'), LOADING_MS);
+    setPhase('executing');
+    setExecCount(0);
+    EXEC_LINES.forEach((_, i) => {
+      schedule(() => setExecCount(i + 1), LINE_INTERVAL_MS * (i + 1));
+    });
+    schedule(() => {
+      setPhase('success');
+    }, LINE_INTERVAL_MS * EXEC_LINES.length);
     schedule(() => {
       if (completedRef.current) return;
       completedRef.current = true;
       onComplete();
-    }, LOADING_MS + SUCCESS_MS);
+    }, LINE_INTERVAL_MS * EXEC_LINES.length + CLOSE_AFTER_SUCCESS_MS);
   };
 
-  const busy = phase === 'loading' || phase === 'success';
+  const busy = phase === 'typing' || phase === 'executing' || phase === 'success';
+  const isTyping = phase === 'typing';
+  const showSlot = !isTyping;
   const slot = chosen ?? '____';
+  const typedText = COMMAND_FULL.slice(0, typedCount);
 
   return (
     <div
@@ -69,7 +144,7 @@ export function CodeCompletionGame({ onComplete, onClose }: CodeCompletionGamePr
             type="button"
             aria-label="Tutup"
             onClick={onClose}
-            disabled={busy}
+            disabled={phase === 'executing' || phase === 'success'}
             className="flex h-9 w-10 items-center justify-center transition-colors hover:bg-[#E81123] hover:text-white disabled:opacity-40 disabled:hover:bg-transparent"
           >
             <X size={14} strokeWidth={1.5} />
@@ -77,25 +152,34 @@ export function CodeCompletionGame({ onComplete, onClose }: CodeCompletionGamePr
         </div>
 
         <div
-          className="flex min-h-[132px] flex-col gap-2 bg-black p-4 text-[13px] leading-relaxed text-neutral-200"
+          className="flex min-h-[176px] flex-col gap-1.5 bg-black p-4 text-[13px] leading-relaxed text-neutral-200"
           style={{ fontFamily: MONO_STACK }}
         >
-          <p className="break-all">
-            {'> systemctl '}
-            <span
-              className={cx(
-                'inline-block border-b px-1',
-                chosen
-                  ? phase === 'error'
-                    ? 'border-red-500 text-red-400'
-                    : 'border-neutral-300 text-white'
-                  : 'border-neutral-500 text-neutral-500',
-              )}
-            >
-              {`[ ${slot} ]`}
-            </span>
-            {' vpn-service'}
-          </p>
+          {isTyping ? (
+            <p className="break-all">
+              {typedText}
+              <span aria-hidden="true" className="end-cursor-blink text-neutral-400">
+                _
+              </span>
+            </p>
+          ) : (
+            <p className="break-all">
+              {COMMAND_PREFIX}
+              <span
+                className={cx(
+                  'inline-block border-b px-1',
+                  chosen
+                    ? phase === 'error'
+                      ? 'border-red-500 text-red-400'
+                      : 'border-neutral-300 text-white'
+                    : 'border-neutral-500 text-neutral-500',
+                )}
+              >
+                {showSlot ? `[ ${slot} ]` : ''}
+              </span>
+              {COMMAND_SUFFIX}
+            </p>
+          )}
 
           {phase === 'error' ? (
             <p role="alert" className="font-semibold text-red-500">
@@ -103,22 +187,15 @@ export function CodeCompletionGame({ onComplete, onClose }: CodeCompletionGamePr
             </p>
           ) : null}
 
-          {phase === 'loading' ? (
-            <p role="status" className="flex items-center gap-2 text-neutral-400">
-              <motion.span
-                aria-hidden="true"
-                animate={{ rotate: 360 }}
-                transition={{ repeat: Infinity, duration: 0.9, ease: 'linear' }}
-                className="block h-3 w-3 rounded-full border-2 border-white/30 border-t-white"
-              />
-              Connecting...
-            </p>
-          ) : null}
-
-          {phase === 'success' ? (
-            <p role="status" className="font-semibold text-emerald-500">
-              SUCCESS
-            </p>
+          {phase === 'executing' || phase === 'success' ? (
+            <div role="status" className="flex flex-col gap-1">
+              {EXEC_LINES.slice(0, execCount).map(renderExecLine)}
+              {phase === 'executing' && execCount < EXEC_LINES.length ? (
+                <span aria-hidden="true" className="end-cursor-blink text-neutral-400">
+                  _
+                </span>
+              ) : null}
+            </div>
           ) : null}
         </div>
 
