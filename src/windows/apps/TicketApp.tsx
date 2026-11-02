@@ -8,6 +8,7 @@ import { loadTicketData } from '@core/services/dataLoader';
 import type { Ticket, TicketPriority } from '@core/types/tickets';
 import { cx } from '@core/utils/cx';
 import { CodeCompletionGame } from '@windows/apps/CodeCompletionGame';
+import { PasswordResetGame } from '@windows/apps/PasswordResetGame';
 
 const PRIORITY_LABEL: Record<TicketPriority, string> = {
   low: 'Rendah',
@@ -100,7 +101,7 @@ function TicketActions({ ticket }: TicketActionsProps) {
     return (
       <>
         <div className="mt-auto flex h-14 shrink-0 items-center gap-2 border-t border-[var(--os-border)] bg-[var(--os-panel)] px-4">
-          {ticket.minigame === 'code_completion' ? (
+          {ticket.minigame === 'code_completion' || ticket.minigame === 'password_reset' ? (
             <button type="button" onClick={() => setResolveOpen(true)} className={ACTION_BTN}>
               [ RESOLVE ]
             </button>
@@ -111,9 +112,14 @@ function TicketActions({ ticket }: TicketActionsProps) {
             </button>
           ) : null}
         </div>
-
-        {resolveOpen ? (
+        {resolveOpen && ticket.minigame === 'code_completion' ? (
           <CodeCompletionGame
+            onComplete={handleResolveDone}
+            onClose={() => setResolveOpen(false)}
+          />
+        ) : null}
+        {resolveOpen && ticket.minigame === 'password_reset' ? (
+          <PasswordResetGame
             onComplete={handleResolveDone}
             onClose={() => setResolveOpen(false)}
           />

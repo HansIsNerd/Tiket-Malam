@@ -23,6 +23,7 @@ export interface Act1Flags {
   serverPatched: boolean;
   ticket4468Done: boolean;
   ticket4469Done: boolean;
+  ticket4470Done: boolean;
   ticket4471Incoming: boolean;
 }
 
@@ -196,6 +197,9 @@ export const useGameStore = create<GameState>()(
           serverPatched: false,
           ticket4468Done: false,
           ticket4469Done: false,
+          // >>> START PATCH
+          ticket4470Done: false,
+          // <<< END PATCH
           ticket4471Incoming: false,
         },
         act2: {

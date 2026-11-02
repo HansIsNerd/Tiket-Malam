@@ -24,7 +24,7 @@
       "priority": "low",
       "description": "Proyektor tidak menampilkan gambar dari laptop.",
       "closedBy": "player",
-      "resolution": "Kabel HDMI dipasang ulang. Sinyal kembali normal.",
+      "resolution": "Kabel HDMI dipasang ulang. Perangkat di-reboot. Sinyal kembali normal.",
       "hasRemoteButton": true,
       "minigame": "server_patch",
       "doneFlag": "act1.ticket4469Done"
@@ -32,15 +32,16 @@
     {
       "id": "ticket_4470",
       "number": 4470,
-      "title": "Reset password",
-      "status": "closed",
-      "from": "player",
-      "createdAt": "22:15",
+      "title": "Lupa Password Domain",
+      "status": "open",
+      "from": "kevin",
+      "createdAt": "22:42",
       "priority": "low",
-      "description": "Permintaan reset password akun sendiri.",
+      "description": "Lupa password domain. Mohon dibantu reset agar bisa login besok pagi.",
       "closedBy": "player",
-      "closedAt": "22:20",
-      "resolution": "Password direset."
+      "resolution": "Password domain direset dan diterapkan.",
+      "minigame": "password_reset",
+      "doneFlag": "act1.ticket4470Done"
     },
     {
       "id": "ticket_4471",

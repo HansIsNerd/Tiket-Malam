@@ -3,7 +3,7 @@ import type { DragEvent } from 'react';
 import { Check, Server, X } from 'lucide-react';
 import { cx } from '@core/utils/cx';
 
-type ColorId = 'red' | 'blue' | 'green' | 'yellow';
+type ColorId = 'red' | 'blue' | 'green' | 'yellow' | 'purple' | 'orange';
 
 interface ColorMeta {
   id: ColorId;
@@ -11,17 +11,24 @@ interface ColorMeta {
   hex: string;
 }
 
-const COLORS: readonly ColorMeta[] = [
+type RebootPhase = 'idle' | 'rebooting' | 'done';
+
+const ALL_COLORS: readonly ColorMeta[] = [
   { id: 'red', label: 'Merah', hex: '#DC2626' },
   { id: 'blue', label: 'Biru', hex: '#2563EB' },
   { id: 'green', label: 'Hijau', hex: '#16A34A' },
   { id: 'yellow', label: 'Kuning', hex: '#EAB308' },
+  { id: 'purple', label: 'Ungu', hex: '#9333EA' },
+  { id: 'orange', label: 'Oranye', hex: '#EA580C' },
 ];
 
+const BASIC_COLOR_COUNT = 4;
 const COMPLETE_DELAY_MS = 700;
-const SUCCESS_DELAY_MS = 1800;
+const REBOOT_MS = 3000;
+const REBOOT_DONE_DELAY_MS = 1500;
 const ERROR_RESET_MS = 1200;
 const ERROR_TEXT = 'Warna tidak cocok.';
+const RESTORED_TEXT = 'SIGNAL RESTORED';
 const DEFAULT_TITLE = 'server_rack.exe';
 
 function shuffle<T>(items: readonly T[]): T[] {
@@ -35,11 +42,11 @@ function shuffle<T>(items: readonly T[]): T[] {
   return copy;
 }
 
-function buildCableOrder(): ColorMeta[] {
-  let order = shuffle(COLORS);
+function buildCableOrder(colors: readonly ColorMeta[]): ColorMeta[] {
+  let order = shuffle(colors);
   let guard = 0;
-  while (order.every((c, i) => c.id === COLORS[i]?.id) && guard < 10) {
-    order = shuffle(COLORS);
+  while (order.every((c, i) => c.id === colors[i]?.id) && guard < 10) {
+    order = shuffle(colors);
     guard += 1;
   }
   return order;
@@ -52,6 +59,8 @@ const INITIAL_CONNECTED: ConnectedMap = {
   blue: false,
   green: false,
   yellow: false,
+  purple: false,
+  orange: false,
 };
 
 interface ServerPatchGameProps {
@@ -59,6 +68,7 @@ interface ServerPatchGameProps {
   onClose: () => void;
   title?: string;
   successMessage?: string;
+  ticketMode?: boolean;
 }
 
 export function ServerPatchGame({
@@ -66,17 +76,24 @@ export function ServerPatchGame({
   onClose,
   title,
   successMessage,
+  ticketMode,
 }: ServerPatchGameProps) {
-  const [cables] = useState<ColorMeta[]>(buildCableOrder);
+  const isTicket = ticketMode ?? successMessage !== undefined;
+  const colors: readonly ColorMeta[] = isTicket ? ALL_COLORS : ALL_COLORS.slice(0, BASIC_COLOR_COUNT);
+
+  const [cables] = useState<ColorMeta[]>(() => buildCableOrder(colors));
   const [connected, setConnected] = useState<ConnectedMap>(INITIAL_CONNECTED);
   const [selected, setSelected] = useState<ColorId | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [rebootPhase, setRebootPhase] = useState<RebootPhase>('idle');
+  const [progress, setProgress] = useState<number>(0);
   const errorTimerRef = useRef<number | null>(null);
   const completedRef = useRef<boolean>(false);
 
-  const allConnected = COLORS.every((c) => connected[c.id]);
-  const showSuccess = allConnected && successMessage !== undefined;
+  const allConnected = colors.every((c) => connected[c.id]);
   const heading = title ?? DEFAULT_TITLE;
+  const connectedCount = colors.filter((c) => connected[c.id]).length;
+  const stageLabel = rebootPhase === 'idle' && !allConnected ? 1 : 2;
 
   useEffect(() => {
     return () => {
@@ -85,17 +102,44 @@ export function ServerPatchGame({
   }, []);
 
   useEffect(() => {
-    if (!allConnected || completedRef.current) return;
-    const delay = successMessage !== undefined ? SUCCESS_DELAY_MS : COMPLETE_DELAY_MS;
+    if (isTicket || !allConnected || completedRef.current) return;
     const timer = window.setTimeout(() => {
       if (completedRef.current) return;
       completedRef.current = true;
       onComplete();
-    }, delay);
+    }, COMPLETE_DELAY_MS);
     return () => {
       window.clearTimeout(timer);
     };
-  }, [allConnected, onComplete, successMessage]);
+  }, [allConnected, isTicket, onComplete]);
+
+  useEffect(() => {
+    if (rebootPhase !== 'rebooting') return;
+    const start = Date.now();
+    const interval = window.setInterval(() => {
+      const pct = Math.min(100, ((Date.now() - start) / REBOOT_MS) * 100);
+      setProgress(pct);
+      if (pct >= 100) {
+        window.clearInterval(interval);
+        setRebootPhase('done');
+      }
+    }, 50);
+    return () => {
+      window.clearInterval(interval);
+    };
+  }, [rebootPhase]);
+
+  useEffect(() => {
+    if (rebootPhase !== 'done' || completedRef.current) return;
+    const timer = window.setTimeout(() => {
+      if (completedRef.current) return;
+      completedRef.current = true;
+      onComplete();
+    }, REBOOT_DONE_DELAY_MS);
+    return () => {
+      window.clearTimeout(timer);
+    };
+  }, [rebootPhase, onComplete]);
 
   const showError = () => {
     setError(ERROR_TEXT);
@@ -142,10 +186,26 @@ export function ServerPatchGame({
   const handleDrop = (e: DragEvent<HTMLButtonElement>, portId: ColorId) => {
     e.preventDefault();
     const raw = e.dataTransfer.getData('text/plain');
-    const cable = COLORS.find((c) => c.id === raw);
+    const cable = colors.find((c) => c.id === raw);
     if (!cable) return;
     tryConnect(portId, cable.id);
   };
+
+  const handleReboot = () => {
+    if (rebootPhase !== 'idle') return;
+    setProgress(0);
+    setRebootPhase('rebooting');
+  };
+
+  let statusText = error ?? '';
+  let statusClass = 'text-red-400';
+  if (isTicket && rebootPhase === 'done') {
+    statusText = RESTORED_TEXT;
+    statusClass = 'font-semibold text-emerald-400';
+  } else if (isTicket && allConnected && successMessage !== undefined && rebootPhase === 'idle') {
+    statusText = successMessage;
+    statusClass = 'font-semibold text-emerald-400';
+  }
 
   return (
     <div
@@ -154,17 +214,20 @@ export function ServerPatchGame({
       aria-label={heading}
       className="absolute inset-0 z-30 flex items-center justify-center bg-black/60 p-4"
     >
-      <div className="flex max-h-full w-full max-w-lg flex-col border border-neutral-500 bg-[var(--os-panel)] shadow-[0_10px_30px_rgba(0,0,0,0.6)]">
+      <div className="flex max-h-full w-full max-w-lg flex-col overflow-y-auto border border-neutral-500 bg-[var(--os-panel)] shadow-[0_10px_30px_rgba(0,0,0,0.6)]">
         <div className="flex h-9 shrink-0 items-center justify-between border-b border-[var(--os-border)] pl-3 text-xs text-neutral-100">
           <span className="flex min-w-0 items-center gap-2">
             <Server size={14} strokeWidth={1.5} className="shrink-0" />
-            <span className="truncate">{heading}</span>
+            <span className="truncate">
+              {isTicket ? `${heading} — Tahap ${stageLabel}/2` : heading}
+            </span>
           </span>
           <button
             type="button"
             aria-label="Tutup"
             onClick={onClose}
-            className="flex h-9 w-10 items-center justify-center transition-colors hover:bg-[#E81123] hover:text-white"
+            disabled={rebootPhase === 'rebooting'}
+            className="flex h-9 w-10 items-center justify-center transition-colors hover:bg-[#E81123] hover:text-white disabled:opacity-40 disabled:hover:bg-transparent"
           >
             <X size={14} strokeWidth={1.5} />
           </button>
@@ -178,7 +241,7 @@ export function ServerPatchGame({
           <div className="grid grid-cols-2 gap-8">
             <div className="flex flex-col gap-2">
               <h3 className="text-[10px] uppercase tracking-wider text-neutral-500">Port</h3>
-              {COLORS.map((port) => {
+              {colors.map((port) => {
                 const done = connected[port.id];
                 return (
                   <button
@@ -189,7 +252,7 @@ export function ServerPatchGame({
                     onDrop={(e) => handleDrop(e, port.id)}
                     aria-label={`Port ${port.label}${done ? ' terhubung' : ''}`}
                     className={cx(
-                      'flex h-12 items-center gap-3 border bg-[var(--os-bg)] px-3 text-left text-xs text-neutral-200 transition-colors',
+                      'flex h-10 items-center gap-3 border bg-[var(--os-bg)] px-3 text-left text-xs text-neutral-200 transition-colors',
                       done
                         ? 'border-emerald-500/60'
                         : selected !== null
@@ -225,7 +288,7 @@ export function ServerPatchGame({
                     aria-label={`Kabel ${cable.label}${done ? ' terpasang' : ''}`}
                     aria-pressed={isSelected}
                     className={cx(
-                      'flex h-12 items-center gap-3 border bg-[var(--os-bg)] px-3 text-left text-xs text-neutral-200 transition-colors',
+                      'flex h-10 items-center gap-3 border bg-[var(--os-bg)] px-3 text-left text-xs text-neutral-200 transition-colors',
                       done
                         ? 'cursor-default border-[var(--os-border)] opacity-30'
                         : isSelected
@@ -244,15 +307,40 @@ export function ServerPatchGame({
             </div>
           </div>
 
+          {isTicket && allConnected ? (
+            <div className="flex flex-col gap-2 border-t border-[var(--os-border)] pt-4">
+              {rebootPhase === 'idle' ? (
+                <button
+                  type="button"
+                  onClick={handleReboot}
+                  className="h-10 bg-red-600 px-4 text-xs font-bold tracking-wider text-white transition-colors hover:bg-red-500"
+                >
+                  REBOOT DEVICE
+                </button>
+              ) : null}
+              {rebootPhase === 'rebooting' ? (
+                <div role="status" className="flex flex-col gap-1.5">
+                  <div className="flex items-center justify-between text-[11px] text-neutral-400">
+                    <span>Rebooting device...</span>
+                    <span className="tabular-nums">{Math.floor(progress)}%</span>
+                  </div>
+                  <div className="h-2 w-full overflow-hidden bg-black/60">
+                    <div
+                      className="h-full bg-red-500"
+                      style={{ width: `${progress}%` }}
+                    />
+                  </div>
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+
           <div className="flex h-5 items-center justify-between text-[11px]">
-            <span
-              role="alert"
-              className={showSuccess ? 'font-semibold text-emerald-400' : 'text-red-400'}
-            >
-              {showSuccess ? successMessage : (error ?? '')}
+            <span role="alert" className={statusClass}>
+              {statusText}
             </span>
             <span className="tabular-nums text-neutral-500">
-              {COLORS.filter((c) => connected[c.id]).length}/{COLORS.length}
+              {connectedCount}/{colors.length}
             </span>
           </div>
         </div>
