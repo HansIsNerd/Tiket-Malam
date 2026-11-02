@@ -4,7 +4,9 @@ export const TicketPrioritySchema = z.enum(['low', 'medium', 'high']);
 export const TicketMinigameSchema = z.enum([
   'terminal',
   'dropdown',
-  'mash',
+  // >>> START PATCH
+  'print_spooler',
+  // <<< END PATCH
   'code_completion',
   'cable',
   'password',

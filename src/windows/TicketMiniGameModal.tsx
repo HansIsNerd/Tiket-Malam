@@ -1,13 +1,13 @@
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import type { FormEvent, ReactNode } from 'react';
 import { FileText, X } from 'lucide-react';
 import type { TicketMinigame } from '@core/types/tickets';
 import { cx } from '@core/utils/cx';
 import { CodeCompletionGame } from '@windows/apps/CodeCompletionGame';
 import { NetworkPatchMiniGame } from '@windows/apps/NetworkPatchMiniGame';
+import { PrintSpoolerGame } from '@windows/apps/PrintSpoolerGame';
 
 const MONO_STACK = "'Courier New', Courier, Consolas, monospace";
-const MASH_TARGET = 10;
 const CORRECT_URL = 'http://intranet.nusadata.local';
 const URL_OPTIONS: readonly string[] = [
   'http://intranet.nusadata.lokal',
@@ -180,59 +180,6 @@ function DropdownGame({ ticketId, onComplete, onClose }: GameProps) {
   );
 }
 
-function MashGame({ ticketId, onComplete, onClose }: GameProps) {
-  const [count, setCount] = useState<number>(0);
-  const doneRef = useRef<boolean>(false);
-  const pct = Math.min(100, (count / MASH_TARGET) * 100);
-
-  useEffect(() => {
-    if (count < MASH_TARGET || doneRef.current) return;
-    doneRef.current = true;
-    const timer = window.setTimeout(onComplete, 400);
-    return () => {
-      window.clearTimeout(timer);
-    };
-  }, [count, onComplete]);
-
-  return (
-    <Shell title={`Printer macet — #${ticketId}`} onClose={onClose}>
-      <div className="flex flex-col gap-4 p-4">
-        <div className="relative grid h-40 grid-cols-5 gap-1 overflow-hidden border border-[var(--os-border)] bg-black/60 p-2">
-          {Array.from({ length: MASH_TARGET }, (_, i) => (
-            <div
-              key={i}
-              className="h-full rounded-sm bg-white/90 transition-all duration-200"
-              style={{
-                opacity: i < count ? 0 : 0.9,
-                transform: i < count ? 'translateY(-24px) rotate(6deg)' : 'rotate(0deg)',
-              }}
-            />
-          ))}
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <div className="flex items-center justify-between text-[11px] text-neutral-400">
-            <span>Kertas ditarik</span>
-            <span className="tabular-nums">
-              {Math.min(count, MASH_TARGET)}/{MASH_TARGET}
-            </span>
-          </div>
-          <div className="h-2 w-full overflow-hidden bg-black/60">
-            <div className="h-full bg-emerald-500 transition-[width] duration-100" style={{ width: `${pct}%` }} />
-          </div>
-        </div>
-        <button
-          type="button"
-          disabled={count >= MASH_TARGET}
-          onClick={() => setCount((c) => c + 1)}
-          className="h-12 bg-red-600 text-sm font-bold tracking-wider text-white transition-colors hover:bg-red-500 active:bg-red-700 disabled:cursor-not-allowed disabled:opacity-40"
-        >
-          Tarik
-        </button>
-      </div>
-    </Shell>
-  );
-}
-
 function generatePassword(): string {
   return Array.from({ length: 8 }, () =>
     PASSWORD_CHARSET.charAt(Math.floor(Math.random() * PASSWORD_CHARSET.length)),
@@ -306,8 +253,8 @@ export function TicketMiniGameModal({ ticketId, kind, onComplete, onClose }: Tic
       return <TerminalGame ticketId={ticketId} onComplete={onComplete} onClose={onClose} />;
     case 'dropdown':
       return <DropdownGame ticketId={ticketId} onComplete={onComplete} onClose={onClose} />;
-    case 'mash':
-      return <MashGame ticketId={ticketId} onComplete={onComplete} onClose={onClose} />;
+    case 'print_spooler':
+      return <PrintSpoolerGame ticketId={ticketId} onComplete={onComplete} onClose={onClose} />;
     case 'password':
       return <PasswordGame ticketId={ticketId} onComplete={onComplete} onClose={onClose} />;
     case 'code_completion':

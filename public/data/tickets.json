@@ -36,10 +36,10 @@
       "from": "bu_sari",
       "createdAt": "22:12",
       "priority": "low",
-      "description": "Printer HR macet, kertas tersangkut di tray.",
+      "description": "Printer HR macet, antrean cetak tidak bergerak.",
       "closedBy": "player",
-      "resolution": "Kertas yang tersangkut ditarik. Printer normal kembali.",
-      "minigame": "mash",
+      "resolution": "Antrean cetak dibersihkan. Print Spooler di-restart.",
+      "minigame": "print_spooler",
       "doneFlag": "act1.ticket4467Done"
     },
     {
