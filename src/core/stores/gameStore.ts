@@ -51,6 +51,7 @@ export interface Act2Flags {
   e17WebcamShift: boolean;
   e19BlackoutStarted: boolean;
   e19Blackout: boolean;
+  processProtected: boolean;
 }
 
 export interface MacFlags {
@@ -219,6 +220,7 @@ export const useGameStore = create<GameState>()(
           e17WebcamShift: false,
           e19BlackoutStarted: false,
           e19Blackout: false,
+          processProtected: false,
         },
         mac: {
           ssIconActive: false,
