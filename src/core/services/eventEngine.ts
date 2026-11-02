@@ -189,6 +189,7 @@ function resetIdle(): void {
 
 function pickNudge(state: GameSnapshot): DartoNudge | null {
   if (state.act !== 1) return null;
+  if (!state.flags.act1.ticket4471Incoming) return null;
   const a1 = state.flags.act1;
   if (!a1.ticket4471Seen) return a1.dartoNudgeTicketSent ? null : TICKET_NUDGE;
   if (!a1.remoteOpened) return a1.dartoNudgeRemoteSent ? null : REMOTE_NUDGE;

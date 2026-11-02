@@ -21,6 +21,9 @@ export interface Act1Flags {
   dartoNudgeTicketSent: boolean;
   dartoNudgeRemoteSent: boolean;
   serverPatched: boolean;
+  ticket4468Done: boolean;
+  ticket4469Done: boolean;
+  ticket4471Incoming: boolean;
 }
 
 export interface Act2Flags {
@@ -191,6 +194,9 @@ export const useGameStore = create<GameState>()(
           dartoNudgeTicketSent: false,
           dartoNudgeRemoteSent: false,
           serverPatched: false,
+          ticket4468Done: false,
+          ticket4469Done: false,
+          ticket4471Incoming: false,
         },
         act2: {
           e02LogOpened: false,

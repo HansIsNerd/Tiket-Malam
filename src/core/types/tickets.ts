@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 export const TicketPrioritySchema = z.enum(['low', 'medium', 'high']);
+export const TicketMinigameSchema = z.enum(['code_completion', 'server_patch']);
 
 export const TicketSchema = z.object({
   id: z.string().min(1),
@@ -17,6 +18,9 @@ export const TicketSchema = z.object({
   hasCloseButton: z.boolean().optional(),
   closeButtonDisappears: z.boolean().optional(),
   hasRemoteButton: z.boolean().optional(),
+  minigame: TicketMinigameSchema.optional(),
+  doneFlag: z.string().min(1).optional(),
+  hiddenUntilFlag: z.string().min(1).optional(),
 });
 
 export const TicketDataSchema = z.object({
@@ -24,5 +28,6 @@ export const TicketDataSchema = z.object({
 });
 
 export type TicketPriority = z.infer<typeof TicketPrioritySchema>;
+export type TicketMinigame = z.infer<typeof TicketMinigameSchema>;
 export type Ticket = z.infer<typeof TicketSchema>;
 export type TicketData = z.infer<typeof TicketDataSchema>;

@@ -2,6 +2,30 @@
   "_schema": 1,
   "events": [
     {
+      "id": "e_ticket_4471_incoming",
+      "once": true,
+      "condition": {
+        "type": "and",
+        "conditions": [
+          { "type": "flag", "path": "act1.ticket4468Done", "value": true },
+          { "type": "flag", "path": "act1.ticket4469Done", "value": true },
+          { "type": "time_after", "time": "22:55" },
+          { "type": "not", "condition": { "type": "flag", "path": "act1.ticket4471Incoming", "value": true } }
+        ]
+      },
+      "actions": [
+        { "type": "set_flag", "path": "act1.ticket4471Incoming", "value": true },
+        {
+          "type": "show_notification",
+          "payload": {
+            "title": "Ticket",
+            "message": "Tiket baru #4471 dari bagas.p: Printer L4 nyala sendiri.",
+            "appId": "ticket"
+          }
+        }
+      ]
+    },
+    {
       "id": "e_gate_trigger",
       "once": true,
       "condition": {

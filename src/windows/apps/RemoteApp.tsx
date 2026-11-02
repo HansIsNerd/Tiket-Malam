@@ -1,7 +1,9 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { FileSpreadsheet, FileText, Folder, Loader2, Lock, Server, X } from 'lucide-react';
 import { useGameStore } from '@core/stores/gameStore';
+import { useMinigameStore } from '@core/stores/minigameStore';
 import { useNotificationStore } from '@core/stores/notificationStore';
+import { useUiStore } from '@core/stores/uiStore';
 import { cx } from '@core/utils/cx';
 import { RemoteWebcam } from '@windows/apps/RemoteWebcam';
 import { ServerPatchGame } from '@windows/apps/ServerPatchGame';
@@ -14,6 +16,8 @@ const JANGAN_BUKA_TEXT = 'kamu telat 11 bulan. — bagas.p';
 const LOG_NAME = 'log_akses.csv';
 const SERVER_RACK_NAME = 'server_rack.exe';
 const BAGAS_WARNING = 'Kamu menyambungkannya ke pintu yang salah.';
+const TICKET_GAME_TITLE = 'Patching';
+const TICKET_GAME_SUCCESS = 'HDMI Connected. Signal Restored.';
 
 type Phase = 'connecting' | 'connected';
 
@@ -21,17 +25,30 @@ export function RemoteApp() {
   const setFlag = useGameStore((s) => s.setFlag);
   const bagasContact = useGameStore((s) => s.flags.act2.e09BagasContact);
   const chairShifted = useGameStore((s) => s.flags.act2.e17WebcamShift);
+  const patchRequested = useMinigameStore((s) => s.remotePatchRequested);
+  const clearRemotePatch = useMinigameStore((s) => s.clearRemotePatch);
+  const ticketLaunchRef = useRef<boolean>(useMinigameStore.getState().remotePatchRequested);
   const [phase, setPhase] = useState<Phase>('connecting');
   const [folderOpen, setFolderOpen] = useState<boolean>(false);
   const [viewerOpen, setViewerOpen] = useState<boolean>(false);
   const [deniedNotice, setDeniedNotice] = useState<boolean>(false);
   const [gameOpen, setGameOpen] = useState<boolean>(false);
+  const [ticketGameOpen, setTicketGameOpen] = useState<boolean>(
+    useMinigameStore.getState().remotePatchRequested,
+  );
 
   const webcamVisible = phase === 'connected' && bagasContact;
 
   useEffect(() => {
+    if (ticketLaunchRef.current) return;
     setFlag('act1.remoteOpened', true);
   }, [setFlag]);
+
+  useEffect(() => {
+    if (!patchRequested) return;
+    setTicketGameOpen(true);
+    clearRemotePatch();
+  }, [patchRequested, clearRemotePatch]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => setPhase('connected'), CONNECT_DELAY_MS);
@@ -68,6 +85,30 @@ export function RemoteApp() {
       appId: 'chat',
     });
   }, []);
+
+  const handleTicketPatchComplete = useCallback(() => {
+    useGameStore.getState().setFlag('act1.ticket4469Done', true);
+    setTicketGameOpen(false);
+    useUiStore.getState().closeWindow('remote');
+  }, []);
+
+  const handleTicketPatchClose = useCallback(() => {
+    setTicketGameOpen(false);
+    useUiStore.getState().closeWindow('remote');
+  }, []);
+
+  if (ticketGameOpen) {
+    return (
+      <div className="relative h-full w-full bg-black">
+        <ServerPatchGame
+          title={TICKET_GAME_TITLE}
+          successMessage={TICKET_GAME_SUCCESS}
+          onComplete={handleTicketPatchComplete}
+          onClose={handleTicketPatchClose}
+        />
+      </div>
+    );
+  }
 
   if (phase === 'connecting') {
     return (

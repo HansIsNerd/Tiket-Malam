@@ -1,10 +1,13 @@
 import { useEffect, useState } from 'react';
 import { Ticket as TicketIcon } from 'lucide-react';
 import { useGameStore } from '@core/stores/gameStore';
+import type { FlagPath, Flags } from '@core/stores/gameStore';
+import { useMinigameStore } from '@core/stores/minigameStore';
 import { useUiStore } from '@core/stores/uiStore';
 import { loadTicketData } from '@core/services/dataLoader';
 import type { Ticket, TicketPriority } from '@core/types/tickets';
 import { cx } from '@core/utils/cx';
+import { CodeCompletionGame } from '@windows/apps/CodeCompletionGame';
 
 const PRIORITY_LABEL: Record<TicketPriority, string> = {
   low: 'Rendah',
@@ -16,6 +19,26 @@ const REMOTE_WINDOW = { appId: 'remote', title: 'Remote', size: { width: 860, he
 
 const ACTION_BTN =
   'h-8 border border-neutral-500 bg-transparent px-4 text-xs font-semibold tracking-wider text-neutral-200 transition-colors hover:bg-white/10';
+
+function readFlag(flags: Flags, path: string): boolean {
+  const [section, key] = path.split('.');
+  if (!section || !key) return false;
+  const bucket = (flags as unknown as Record<string, Record<string, unknown>>)[section];
+  return bucket?.[key] === true;
+}
+
+function isDone(flags: Flags, ticket: Ticket): boolean {
+  return ticket.doneFlag !== undefined && readFlag(flags, ticket.doneFlag);
+}
+
+function isVisible(flags: Flags, ticket: Ticket): boolean {
+  return ticket.hiddenUntilFlag === undefined || readFlag(flags, ticket.hiddenUntilFlag);
+}
+
+function effectiveStatus(flags: Flags, ticket: Ticket): 'open' | 'closed' {
+  return isDone(flags, ticket) ? 'closed' : ticket.status;
+}
+
 interface FieldProps {
   label: string;
   value: string;
@@ -41,6 +64,7 @@ function TicketActions({ ticket }: TicketActionsProps) {
   const setFlag = useGameStore((s) => s.setFlag);
   const openWindow = useUiStore((s) => s.openWindow);
   const [dialogOpen, setDialogOpen] = useState<boolean>(false);
+  const [resolveOpen, setResolveOpen] = useState<boolean>(false);
 
   const isSpecial = ticket.closeButtonDisappears === true;
   const showClose = !(isSpecial && closeClicked);
@@ -59,8 +83,44 @@ function TicketActions({ ticket }: TicketActionsProps) {
   };
 
   const handleRemote = () => {
+    if (ticket.minigame === 'server_patch') {
+      useMinigameStore.getState().requestRemotePatch();
+    }
     openWindow({ ...REMOTE_WINDOW });
   };
+
+  const handleResolveDone = () => {
+    setResolveOpen(false);
+    if (ticket.doneFlag !== undefined) {
+      setFlag(ticket.doneFlag as FlagPath, true as never);
+    }
+  };
+
+  if (ticket.minigame !== undefined) {
+    return (
+      <>
+        <div className="mt-auto flex h-14 shrink-0 items-center gap-2 border-t border-[var(--os-border)] bg-[var(--os-panel)] px-4">
+          {ticket.minigame === 'code_completion' ? (
+            <button type="button" onClick={() => setResolveOpen(true)} className={ACTION_BTN}>
+              [ RESOLVE ]
+            </button>
+          ) : null}
+          {ticket.minigame === 'server_patch' ? (
+            <button type="button" onClick={handleRemote} className={ACTION_BTN}>
+              [ REMOTE ]
+            </button>
+          ) : null}
+        </div>
+
+        {resolveOpen ? (
+          <CodeCompletionGame
+            onComplete={handleResolveDone}
+            onClose={() => setResolveOpen(false)}
+          />
+        ) : null}
+      </>
+    );
+  }
 
   return (
     <>
@@ -113,6 +173,7 @@ export function TicketApp() {
   const ticketData = useGameStore((s) => s.ticketData);
   const setTicketData = useGameStore((s) => s.setTicketData);
   const playerName = useGameStore((s) => s.playerName);
+  const flags = useGameStore((s) => s.flags);
   const setFlag = useGameStore((s) => s.setFlag);
   const [activeTicketId, setActiveTicketId] = useState<string | null>(null);
 
@@ -131,11 +192,12 @@ export function TicketApp() {
     };
   }, [ticketData, setTicketData]);
 
-  const tickets = [...(ticketData?.tickets ?? [])].sort(
-    (a, b) => b.number - a.number,
-  );
+  const tickets = [...(ticketData?.tickets ?? [])]
+    .filter((t) => isVisible(flags, t))
+    .sort((a, b) => b.number - a.number);
   const activeTicket = tickets.find((t) => t.id === activeTicketId) ?? null;
   const activeTicketNumber = activeTicket?.number ?? null;
+  const activeStatus = activeTicket ? effectiveStatus(flags, activeTicket) : null;
 
   useEffect(() => {
     if (activeTicketNumber === 4471) setFlag('act1.ticket4471Seen', true);
@@ -154,7 +216,7 @@ export function TicketApp() {
         </div>
         <ul className="chat-scroll min-h-0 flex-1 overflow-y-auto">
           {tickets.map((ticket) => {
-            const isOpen = ticket.status === 'open';
+            const isOpen = effectiveStatus(flags, ticket) === 'open';
             const isActive = ticket.id === activeTicketId;
             return (
               <li key={ticket.id} className="border-b border-[var(--os-border)]">
@@ -222,7 +284,7 @@ export function TicketApp() {
                 />
                 <Field
                   label="Status"
-                  value={activeTicket.status === 'open' ? 'Open' : 'Closed'}
+                  value={activeStatus === 'open' ? 'Open' : 'Closed'}
                 />
               </dl>
 
@@ -235,7 +297,7 @@ export function TicketApp() {
                 </p>
               </div>
 
-              {activeTicket.status === 'closed' ? (
+              {activeStatus === 'closed' ? (
                 <div className="mx-4 mb-4 flex flex-col gap-2 border border-[var(--os-border)] bg-[var(--os-panel)] p-3">
                   <h3 className="text-[10px] uppercase tracking-wider text-neutral-500">
                     Penutupan
@@ -248,7 +310,7 @@ export function TicketApp() {
                         : '-'}
                     </dd>
                     <dt className="text-neutral-500">Waktu</dt>
-                    <dd>{activeTicket.closedAt ?? '-'}</dd>
+                    <dd>{activeTicket.closedAt ?? 'Shift ini'}</dd>
                     <dt className="text-neutral-500">Catatan</dt>
                     <dd className="whitespace-pre-wrap">
                       {activeTicket.resolution ?? '-'}
@@ -258,7 +320,7 @@ export function TicketApp() {
               ) : null}
             </div>
 
-            {activeTicket.status === 'open' ? (
+            {activeStatus === 'open' ? (
               <TicketActions key={activeTicket.id} ticket={activeTicket} />
             ) : null}
           </div>
