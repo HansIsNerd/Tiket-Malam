@@ -4,7 +4,7 @@ import { FileText, X } from 'lucide-react';
 import type { TicketMinigame } from '@core/types/tickets';
 import { cx } from '@core/utils/cx';
 import { CodeCompletionGame } from '@windows/apps/CodeCompletionGame';
-import { ServerPatchGame } from '@windows/apps/ServerPatchGame';
+import { NetworkPatchMiniGame } from '@windows/apps/NetworkPatchMiniGame';
 
 const MONO_STACK = "'Courier New', Courier, Consolas, monospace";
 const MASH_TARGET = 10;
@@ -313,6 +313,6 @@ export function TicketMiniGameModal({ ticketId, kind, onComplete, onClose }: Tic
     case 'code_completion':
       return <CodeCompletionGame onComplete={onComplete} onClose={onClose} />;
     case 'cable':
-      return <ServerPatchGame title="Sambung Kabel" onComplete={onComplete} onClose={onClose} />;
+      return <NetworkPatchMiniGame ticketId={ticketId} onComplete={onComplete} onClose={onClose} />;
   }
 }

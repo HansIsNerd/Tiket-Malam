@@ -6,7 +6,9 @@ import { useNotificationStore } from '@core/stores/notificationStore';
 import { useUiStore } from '@core/stores/uiStore';
 import { cx } from '@core/utils/cx';
 import { RemoteWebcam } from '@windows/apps/RemoteWebcam';
-import { ServerPatchGame } from '@windows/apps/ServerPatchGame';
+// >>> START PATCH
+import { NetworkPatchMiniGame } from '@windows/apps/NetworkPatchMiniGame';
+// <<< END PATCH
 
 const REMOTE_HOST = 'L4-PC-01';
 const CONNECT_DELAY_MS = 3000;
@@ -16,8 +18,6 @@ const JANGAN_BUKA_TEXT = 'kamu telat 11 bulan. — bagas.p';
 const LOG_NAME = 'log_akses.csv';
 const SERVER_RACK_NAME = 'server_rack.exe';
 const BAGAS_WARNING = 'Kamu menyambungkannya ke pintu yang salah.';
-const TICKET_GAME_TITLE = 'Patching';
-const TICKET_GAME_SUCCESS = 'HDMI Connected. Signal Restored.';
 
 type Phase = 'connecting' | 'connected';
 
@@ -100,12 +100,13 @@ export function RemoteApp() {
   if (ticketGameOpen) {
     return (
       <div className="relative h-full w-full bg-black">
-        <ServerPatchGame
-          title={TICKET_GAME_TITLE}
-          successMessage={TICKET_GAME_SUCCESS}
+        {/* >>> START PATCH */}
+        <NetworkPatchMiniGame
+          ticketId="4469"
           onComplete={handleTicketPatchComplete}
           onClose={handleTicketPatchClose}
         />
+        {/* <<< END PATCH */}
       </div>
     );
   }
@@ -246,9 +247,8 @@ export function RemoteApp() {
           </div>
         </div>
       ) : null}
-
       {gameOpen ? (
-        <ServerPatchGame onComplete={handlePatchComplete} onClose={() => setGameOpen(false)} />
+        <NetworkPatchMiniGame onComplete={handlePatchComplete} onClose={() => setGameOpen(false)} />
       ) : null}
     </div>
   );
