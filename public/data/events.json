@@ -7,7 +7,13 @@
       "condition": {
         "type": "and",
         "conditions": [
-          { "type": "flag", "path": "act1.ticketsCompleted", "value": 6 },
+          {
+            "type": "or",
+            "conditions": [
+              { "type": "flag", "path": "act1.ticketsCompleted", "value": 12 },
+              { "type": "flag", "path": "act1.ticketsCompleted", "value": 13 }
+            ]
+          },
           { "type": "flag", "path": "act1.ticket4471Seen", "value": false }
         ]
       },

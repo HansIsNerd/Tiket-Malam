@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { FormEvent, ReactNode } from 'react';
 import { FileText, X } from 'lucide-react';
 import type { TicketMinigame } from '@core/types/tickets';
@@ -14,8 +14,15 @@ const URL_OPTIONS: readonly string[] = [
   'http://intranet.nusadata.local',
   'http://intranet-nusadata.local',
 ];
-const TERMINAL_WORDS: readonly string[] = ['stop', 'restart', 'delete'];
-const TERMINAL_CORRECT = 'restart';
+// >>> START PATCH
+const TERMINAL_DEFAULT_SERVICE = 'mail-server';
+const TERMINAL_SERVICES: Record<string, string> = {
+  '4461': 'router-lobby',
+};
+const TERMINAL_LINE_MS = 500;
+const TERMINAL_CLOSE_AFTER_SUCCESS_MS = 1200;
+const TERMINAL_ERROR_TEXT = 'Command not found.';
+// <<< END PATCH
 const PASSWORD_CHARSET = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
 const ACTION_BTN =
   'h-8 border border-neutral-500 bg-transparent px-4 text-xs font-semibold tracking-wider text-neutral-200 transition-colors hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent';
@@ -68,66 +75,168 @@ interface GameProps {
   onClose: () => void;
 }
 
-function TerminalGame({ ticketId, onComplete, onClose }: GameProps) {
-  const [chosen, setChosen] = useState<string | null>(null);
-  const [error, setError] = useState<boolean>(false);
-  const doneRef = useRef<boolean>(false);
+// >>> START PATCH
+type TerminalPhase = 'input' | 'error' | 'executing' | 'success';
 
-  const handlePick = (word: string) => {
-    if (doneRef.current) return;
-    setChosen(word);
-    if (word !== TERMINAL_CORRECT) {
-      setError(true);
+function normalizeCommand(raw: string): string {
+  return raw.trim().replace(/\s+/g, ' ').toLowerCase();
+}
+
+function TerminalGame({ ticketId, onComplete, onClose }: GameProps) {
+  const service = TERMINAL_SERVICES[ticketId] ?? TERMINAL_DEFAULT_SERVICE;
+  const correctCommand = `systemctl restart ${service}`;
+  const chips: readonly string[] = [correctCommand, 'reboot --now', `ping ${service}`];
+  const execLines: readonly string[] = [
+    '> executing command...',
+    `Stopping ${service}...`,
+    'Clearing socket buffers...',
+    `Starting ${service}...`,
+  ];
+  const successLine = `${service.toUpperCase()} RESTORED.`;
+
+  const [value, setValue] = useState<string>('');
+  const [phase, setPhase] = useState<TerminalPhase>('input');
+  const [execCount, setExecCount] = useState<number>(0);
+  const timersRef = useRef<number[]>([]);
+  const completedRef = useRef<boolean>(false);
+  const completeRef = useRef<() => void>(onComplete);
+
+  completeRef.current = onComplete;
+
+  useEffect(() => {
+    const timers = timersRef.current;
+    return () => {
+      timers.forEach((t) => window.clearTimeout(t));
+    };
+  }, []);
+
+  const schedule = (fn: () => void, ms: number) => {
+    timersRef.current.push(window.setTimeout(fn, ms));
+  };
+
+  const busy = phase === 'executing' || phase === 'success';
+
+  const runCommand = (raw: string) => {
+    if (busy) return;
+    if (normalizeCommand(raw) !== correctCommand) {
+      setPhase('error');
       return;
     }
-    setError(false);
-    doneRef.current = true;
-    onComplete();
+    setPhase('executing');
+    setExecCount(0);
+    execLines.forEach((_, i) => {
+      schedule(() => setExecCount(i + 1), TERMINAL_LINE_MS * (i + 1));
+    });
+    schedule(() => setPhase('success'), TERMINAL_LINE_MS * (execLines.length + 1));
+    schedule(
+      () => {
+        if (completedRef.current) return;
+        completedRef.current = true;
+        completeRef.current();
+      },
+      TERMINAL_LINE_MS * (execLines.length + 1) + TERMINAL_CLOSE_AFTER_SUCCESS_MS,
+    );
+  };
+
+  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    runCommand(value);
+  };
+
+  const handleChip = (command: string) => {
+    if (busy) return;
+    setValue(command);
+    runCommand(command);
   };
 
   return (
     <Shell title={`terminal — #${ticketId}`} onClose={onClose}>
-      <div
-        className="flex min-h-[132px] flex-col gap-2 bg-black p-4 text-[13px] leading-relaxed text-neutral-200"
+      <form
+        onSubmit={handleSubmit}
+        className="flex min-h-[176px] flex-col gap-1.5 bg-black p-4 text-[13px] leading-relaxed text-neutral-200"
         style={{ fontFamily: MONO_STACK }}
       >
-        <p className="break-all">
-          {'> sudo systemctl '}
-          <span
-            className={cx(
-              'inline-block border-b px-1',
-              chosen === null
-                ? 'border-neutral-500 text-neutral-500'
-                : error
-                  ? 'border-red-500 text-red-400'
-                  : 'border-neutral-300 text-white',
-            )}
-          >
-            {`[ ${chosen ?? '____'} ]`}
-          </span>
-          {' mail-server'}
+        <p className="break-all text-neutral-400">{`# Restart layanan ${service}`}</p>
+        <p className="break-words text-[12px] text-neutral-500">
+          {`[Hint: Ketik perintah "${correctCommand}" untuk memulai ulang]`}
         </p>
-        {error ? (
+        <label className="flex items-center gap-2">
+          <span aria-hidden="true" className="shrink-0 text-neutral-400">
+            {'>'}
+          </span>
+          <input
+            type="text"
+            value={value}
+            onChange={(e) => {
+              setValue(e.target.value);
+              if (phase === 'error') setPhase('input');
+            }}
+            disabled={busy}
+            autoFocus
+            autoComplete="off"
+            spellCheck={false}
+            autoCapitalize="off"
+            autoCorrect="off"
+            aria-label="Command"
+            className={cx(
+              'min-w-0 flex-1 border-0 bg-transparent p-0 text-[13px] caret-neutral-200 outline-none disabled:opacity-70',
+              phase === 'error' ? 'text-red-400' : 'text-neutral-100',
+            )}
+            style={{ fontFamily: MONO_STACK }}
+          />
+        </label>
+
+        {phase === 'error' ? (
           <p role="alert" className="font-semibold text-red-500">
-            Command gagal. Server tetap timeout.
+            {TERMINAL_ERROR_TEXT}
           </p>
         ) : null}
-      </div>
+
+        {busy ? (
+          <div role="status" className="flex flex-col gap-1">
+            {execLines.slice(0, execCount).map((line, i) =>
+              i === 0 ? (
+                <p key={line} className="text-neutral-400">
+                  {line}
+                </p>
+              ) : (
+                <p key={line} className="break-all">
+                  <span className="font-semibold text-emerald-500">{'[ OK ]'}</span>
+                  {` ${line}`}
+                </p>
+              ),
+            )}
+            {phase === 'success' ? (
+              <p className="break-all font-semibold text-emerald-400">
+                {`[ SUCCESS ] ${successLine}`}
+              </p>
+            ) : (
+              <span aria-hidden="true" className="end-cursor-blink text-neutral-400">
+                _
+              </span>
+            )}
+          </div>
+        ) : null}
+        <button type="submit" className="hidden" aria-hidden="true" tabIndex={-1} />
+      </form>
       <div className="flex flex-wrap items-center gap-2 border-t border-[var(--os-border)] bg-[var(--os-panel)] px-4 py-3">
-        {TERMINAL_WORDS.map((word) => (
+        {chips.map((command) => (
           <button
-            key={word}
+            key={command}
             type="button"
-            onClick={() => handlePick(word)}
-            className="rounded-full border border-[var(--os-accent)] bg-transparent px-3 py-1.5 text-xs text-neutral-100 transition-colors hover:bg-[var(--os-accent)]"
+            disabled={busy}
+            onClick={() => handleChip(command)}
+            className="rounded-full border border-[var(--os-accent)] bg-transparent px-3 py-1.5 text-xs text-neutral-100 transition-colors hover:bg-[var(--os-accent)] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent"
+            style={{ fontFamily: MONO_STACK }}
           >
-            {word}
+            {`[ ${command} ]`}
           </button>
         ))}
       </div>
     </Shell>
   );
 }
+// <<< END PATCH
 
 function DropdownGame({ ticketId, onComplete, onClose }: GameProps) {
   const [value, setValue] = useState<string>('');

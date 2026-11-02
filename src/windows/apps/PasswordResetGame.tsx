@@ -79,8 +79,6 @@ export function PasswordResetGame({ onComplete, onClose }: PasswordResetGameProp
           <button type="button" onClick={handleGenerate} className={ACTION_BTN}>
             [ Generate Random Password ]
           </button>
-
-          {/* >>> START PATCH */}
           <div
             className="flex h-12 select-none items-center justify-center border border-[var(--os-border)] bg-black text-lg tracking-widest text-neutral-100"
             style={{
@@ -98,8 +96,6 @@ export function PasswordResetGame({ onComplete, onClose }: PasswordResetGameProp
           >
             {generated ?? '-- --- --'}
           </div>
-          {/* <<< END PATCH */}
-
           <label className="flex flex-col gap-1 text-[11px] uppercase tracking-wider text-neutral-500">
             Ketik ulang password
             <input
@@ -109,10 +105,8 @@ export function PasswordResetGame({ onComplete, onClose }: PasswordResetGameProp
                 setTyped(e.target.value);
                 setError(false);
               }}
-              // >>> START PATCH
               onPaste={(e) => e.preventDefault()}
               onDrop={(e) => e.preventDefault()}
-              // <<< END PATCH
               disabled={generated === null}
               autoComplete="off"
               spellCheck={false}

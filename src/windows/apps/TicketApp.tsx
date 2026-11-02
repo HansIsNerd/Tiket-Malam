@@ -8,6 +8,8 @@ import type { Ticket, TicketPriority } from '@core/types/tickets';
 import { cx } from '@core/utils/cx';
 import { TicketMiniGameModal } from '@windows/TicketMiniGameModal';
 
+const SHIFT_TICKET_TOTAL = 12;
+
 const PRIORITY_LABEL: Record<TicketPriority, string> = {
   low: 'Rendah',
   medium: 'Sedang',
@@ -191,6 +193,7 @@ export function TicketApp() {
   const activeTicket = tickets.find((t) => t.id === activeTicketId) ?? null;
   const activeTicketNumber = activeTicket?.number ?? null;
   const activeStatus = activeTicket ? effectiveStatus(flags, activeTicket) : null;
+  const completedCount = Math.min(flags.act1.ticketsCompleted, SHIFT_TICKET_TOTAL);
 
   useEffect(() => {
     if (activeTicketNumber === 4471) setFlag('act1.ticket4471Seen', true);
@@ -202,6 +205,9 @@ export function TicketApp() {
   return (
     <div className="relative flex h-full w-full bg-[var(--os-bg)] text-neutral-100">
       <aside className="flex w-[350px] shrink-0 flex-col border-r border-[var(--os-border)] bg-[var(--os-panel)]">
+        <div className="border-b border-[var(--os-border)] px-3 py-2 text-[11px] font-semibold text-neutral-300">
+          {`Antrean Shift Malam: ${completedCount} / ${SHIFT_TICKET_TOTAL} Selesai`}
+        </div>
         <div className="grid grid-cols-[64px_1fr_64px] border-b border-[var(--os-border)] px-3 py-2 text-[10px] uppercase tracking-wider text-neutral-500">
           <span>No.</span>
           <span>Subjek</span>

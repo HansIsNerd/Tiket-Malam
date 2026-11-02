@@ -7,6 +7,8 @@ import type { FileData } from '@core/types/files';
 import type { TicketData } from '@core/types/tickets';
 import type { DirectoryData } from '@core/types/directory';
 
+export const MAX_TICKETS_COMPLETED = 12;
+
 export interface Act1Flags {
   ticket4471CloseClicked: boolean;
   ticket4471ReplyAttempted: boolean;
@@ -21,6 +23,12 @@ export interface Act1Flags {
   dartoNudgeTicketSent: boolean;
   dartoNudgeRemoteSent: boolean;
   serverPatched: boolean;
+  ticket4459Done: boolean;
+  ticket4460Done: boolean;
+  ticket4461Done: boolean;
+  ticket4462Done: boolean;
+  ticket4463Done: boolean;
+  ticket4464Done: boolean;
   ticket4465Done: boolean;
   ticket4466Done: boolean;
   ticket4467Done: boolean;
@@ -200,6 +208,12 @@ export const useGameStore = create<GameState>()(
           dartoNudgeTicketSent: false,
           dartoNudgeRemoteSent: false,
           serverPatched: false,
+          ticket4459Done: false,
+          ticket4460Done: false,
+          ticket4461Done: false,
+          ticket4462Done: false,
+          ticket4463Done: false,
+          ticket4464Done: false,
           ticket4465Done: false,
           ticket4466Done: false,
           ticket4467Done: false,
@@ -283,7 +297,10 @@ export const useGameStore = create<GameState>()(
             ...state.flags,
             act1: {
               ...state.flags.act1,
-              ticketsCompleted: state.flags.act1.ticketsCompleted + 1,
+              ticketsCompleted: Math.min(
+                MAX_TICKETS_COMPLETED,
+                state.flags.act1.ticketsCompleted + 1,
+              ),
             },
           },
         })),
