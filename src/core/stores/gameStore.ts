@@ -21,10 +21,14 @@ export interface Act1Flags {
   dartoNudgeTicketSent: boolean;
   dartoNudgeRemoteSent: boolean;
   serverPatched: boolean;
+  ticket4465Done: boolean;
+  ticket4466Done: boolean;
+  ticket4467Done: boolean;
   ticket4468Done: boolean;
   ticket4469Done: boolean;
   ticket4470Done: boolean;
   ticket4471Incoming: boolean;
+  ticketsCompleted: number;
 }
 
 export interface Act2Flags {
@@ -118,6 +122,7 @@ interface GameState {
   setFileData: (data: FileData) => void;
   setDirectoryData: (data: DirectoryData) => void;
   setFlag: <P extends FlagPath>(path: P, value: FlagValue<P>) => void;
+  incrementTicketsCompleted: () => void;
   completeBoot: (name?: string) => void;
 }
 
@@ -195,12 +200,14 @@ export const useGameStore = create<GameState>()(
           dartoNudgeTicketSent: false,
           dartoNudgeRemoteSent: false,
           serverPatched: false,
+          ticket4465Done: false,
+          ticket4466Done: false,
+          ticket4467Done: false,
           ticket4468Done: false,
           ticket4469Done: false,
-          // >>> START PATCH
           ticket4470Done: false,
-          // <<< END PATCH
           ticket4471Incoming: false,
+          ticketsCompleted: 0,
         },
         act2: {
           e02LogOpened: false,
@@ -269,6 +276,17 @@ export const useGameStore = create<GameState>()(
             } as Flags,
           };
         }),
+
+      incrementTicketsCompleted: () =>
+        set((state) => ({
+          flags: {
+            ...state.flags,
+            act1: {
+              ...state.flags.act1,
+              ticketsCompleted: state.flags.act1.ticketsCompleted + 1,
+            },
+          },
+        })),
 
       completeBoot: (name) => {
         const trimmed = name?.trim();

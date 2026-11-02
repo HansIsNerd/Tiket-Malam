@@ -2,13 +2,11 @@ import { useEffect, useState } from 'react';
 import { Ticket as TicketIcon } from 'lucide-react';
 import { useGameStore } from '@core/stores/gameStore';
 import type { FlagPath, Flags } from '@core/stores/gameStore';
-import { useMinigameStore } from '@core/stores/minigameStore';
 import { useUiStore } from '@core/stores/uiStore';
 import { loadTicketData } from '@core/services/dataLoader';
 import type { Ticket, TicketPriority } from '@core/types/tickets';
 import { cx } from '@core/utils/cx';
-import { CodeCompletionGame } from '@windows/apps/CodeCompletionGame';
-import { PasswordResetGame } from '@windows/apps/PasswordResetGame';
+import { TicketMiniGameModal } from '@windows/TicketMiniGameModal';
 
 const PRIORITY_LABEL: Record<TicketPriority, string> = {
   low: 'Rendah',
@@ -63,6 +61,7 @@ interface TicketActionsProps {
 function TicketActions({ ticket }: TicketActionsProps) {
   const closeClicked = useGameStore((s) => s.flags.act1.ticket4471CloseClicked);
   const setFlag = useGameStore((s) => s.setFlag);
+  const incrementTicketsCompleted = useGameStore((s) => s.incrementTicketsCompleted);
   const openWindow = useUiStore((s) => s.openWindow);
   const [dialogOpen, setDialogOpen] = useState<boolean>(false);
   const [resolveOpen, setResolveOpen] = useState<boolean>(false);
@@ -84,42 +83,30 @@ function TicketActions({ ticket }: TicketActionsProps) {
   };
 
   const handleRemote = () => {
-    if (ticket.minigame === 'server_patch') {
-      useMinigameStore.getState().requestRemotePatch();
-    }
     openWindow({ ...REMOTE_WINDOW });
   };
 
   const handleResolveDone = () => {
     setResolveOpen(false);
-    if (ticket.doneFlag !== undefined) {
-      setFlag(ticket.doneFlag as FlagPath, true as never);
-    }
+    const doneFlag = ticket.doneFlag;
+    if (doneFlag === undefined) return;
+    if (readFlag(useGameStore.getState().flags, doneFlag)) return;
+    setFlag(doneFlag as FlagPath, true as never);
+    incrementTicketsCompleted();
   };
 
   if (ticket.minigame !== undefined) {
     return (
       <>
         <div className="mt-auto flex h-14 shrink-0 items-center gap-2 border-t border-[var(--os-border)] bg-[var(--os-panel)] px-4">
-          {ticket.minigame === 'code_completion' || ticket.minigame === 'password_reset' ? (
-            <button type="button" onClick={() => setResolveOpen(true)} className={ACTION_BTN}>
-              [ RESOLVE ]
-            </button>
-          ) : null}
-          {ticket.minigame === 'server_patch' ? (
-            <button type="button" onClick={handleRemote} className={ACTION_BTN}>
-              [ REMOTE ]
-            </button>
-          ) : null}
+          <button type="button" onClick={() => setResolveOpen(true)} className={ACTION_BTN}>
+            [ RESOLVE ]
+          </button>
         </div>
-        {resolveOpen && ticket.minigame === 'code_completion' ? (
-          <CodeCompletionGame
-            onComplete={handleResolveDone}
-            onClose={() => setResolveOpen(false)}
-          />
-        ) : null}
-        {resolveOpen && ticket.minigame === 'password_reset' ? (
-          <PasswordResetGame
+        {resolveOpen ? (
+          <TicketMiniGameModal
+            ticketId={String(ticket.number)}
+            kind={ticket.minigame}
             onComplete={handleResolveDone}
             onClose={() => setResolveOpen(false)}
           />

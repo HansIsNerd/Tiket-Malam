@@ -1,7 +1,14 @@
 import { z } from 'zod';
 
 export const TicketPrioritySchema = z.enum(['low', 'medium', 'high']);
-export const TicketMinigameSchema = z.enum(['code_completion', 'server_patch', 'password_reset']);
+export const TicketMinigameSchema = z.enum([
+  'terminal',
+  'dropdown',
+  'mash',
+  'code_completion',
+  'cable',
+  'password',
+]);
 
 export const TicketSchema = z.object({
   id: z.string().min(1),

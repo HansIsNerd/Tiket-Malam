@@ -7,14 +7,12 @@
       "condition": {
         "type": "and",
         "conditions": [
-          { "type": "flag", "path": "act1.ticket4468Done", "value": true },
-          { "type": "flag", "path": "act1.ticket4469Done", "value": true },
-          { "type": "flag", "path": "act1.ticket4470Done", "value": true },
-          { "type": "time_after", "time": "22:55" },
-          { "type": "not", "condition": { "type": "flag", "path": "act1.ticket4471Incoming", "value": true } }
+          { "type": "flag", "path": "act1.ticketsCompleted", "value": 6 },
+          { "type": "flag", "path": "act1.ticket4471Seen", "value": false }
         ]
       },
       "actions": [
+        { "type": "set_flag", "path": "act1.ticket4471Seen", "value": true },
         { "type": "set_flag", "path": "act1.ticket4471Incoming", "value": true },
         {
           "type": "show_notification",
