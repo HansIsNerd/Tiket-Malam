@@ -14,14 +14,22 @@ const URL_OPTIONS: readonly string[] = [
   'http://intranet.nusadata.local',
   'http://intranet-nusadata.local',
 ];
-// >>> START PATCH
 const TERMINAL_DEFAULT_SERVICE = 'mail-server';
 const TERMINAL_SERVICES: Record<string, string> = {
+  // >>> START PATCH
+  '4460': 'mail-sync',
+  // <<< END PATCH
   '4461': 'router-lobby',
 };
 const TERMINAL_LINE_MS = 500;
 const TERMINAL_CLOSE_AFTER_SUCCESS_MS = 1200;
 const TERMINAL_ERROR_TEXT = 'Command not found.';
+// >>> START PATCH
+const CORRECT_IP = '192.168.1.45';
+const IP_OPTIONS: readonly string[] = ['192.168.1.12', '192.168.1.45', '192.168.1.1'];
+const REFRESH_MIN = 60;
+const REFRESH_MAX = 144;
+const REFRESH_HOLD_MS = 2000;
 // <<< END PATCH
 const PASSWORD_CHARSET = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
 const ACTION_BTN =
@@ -75,7 +83,6 @@ interface GameProps {
   onClose: () => void;
 }
 
-// >>> START PATCH
 type TerminalPhase = 'input' | 'error' | 'executing' | 'success';
 
 function normalizeCommand(raw: string): string {
@@ -236,7 +243,6 @@ function TerminalGame({ ticketId, onComplete, onClose }: GameProps) {
     </Shell>
   );
 }
-// <<< END PATCH
 
 function DropdownGame({ ticketId, onComplete, onClose }: GameProps) {
   const [value, setValue] = useState<string>('');
@@ -288,6 +294,136 @@ function DropdownGame({ ticketId, onComplete, onClose }: GameProps) {
     </Shell>
   );
 }
+
+// >>> START PATCH
+function IpDropdownGame({ ticketId, onComplete, onClose }: GameProps) {
+  const [value, setValue] = useState<string>('');
+  const [error, setError] = useState<boolean>(false);
+  const doneRef = useRef<boolean>(false);
+
+  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (doneRef.current || value === '') return;
+    if (value !== CORRECT_IP) {
+      setError(true);
+      return;
+    }
+    doneRef.current = true;
+    onComplete();
+  };
+
+  return (
+    <Shell title={`Perbaiki IP Conflict — #${ticketId}`} onClose={onClose}>
+      <form onSubmit={handleSubmit} className="flex flex-col gap-4 p-4">
+        <p className="text-xs text-neutral-400">Pilih IP yang tersedia:</p>
+        <select
+          value={value}
+          onChange={(e) => {
+            setValue(e.target.value);
+            setError(false);
+          }}
+          aria-label="IP tersedia"
+          className="border border-[var(--os-border)] bg-[var(--os-bg)] px-3 py-2 text-xs text-neutral-100 outline-none focus:border-[var(--os-accent)]"
+          style={{ fontFamily: MONO_STACK }}
+        >
+          <option value="">-- Pilih IP --</option>
+          {IP_OPTIONS.map((ip) => (
+            <option key={ip} value={ip}>
+              {ip}
+            </option>
+          ))}
+        </select>
+        <p role="alert" className="h-4 text-[11px] text-red-400">
+          {error ? 'IP sudah digunakan perangkat lain.' : ''}
+        </p>
+        <div className="flex justify-end gap-2">
+          <button type="button" onClick={onClose} className={ACTION_BTN}>
+            [ Batal ]
+          </button>
+          <button type="submit" disabled={value === ''} className={ACTION_BTN}>
+            [ Apply ]
+          </button>
+        </div>
+      </form>
+    </Shell>
+  );
+}
+
+function SliderRefreshGame({ ticketId, onComplete, onClose }: GameProps) {
+  const [rate, setRate] = useState<number>(REFRESH_MIN);
+  const [done, setDone] = useState<boolean>(false);
+  const doneRef = useRef<boolean>(false);
+  const completeRef = useRef<() => void>(onComplete);
+
+  completeRef.current = onComplete;
+
+  const atTarget = rate === REFRESH_MAX;
+
+  useEffect(() => {
+    if (!atTarget) return;
+    const timer = window.setTimeout(() => {
+      if (doneRef.current) return;
+      doneRef.current = true;
+      setDone(true);
+      completeRef.current();
+    }, REFRESH_HOLD_MS);
+    return () => {
+      window.clearTimeout(timer);
+    };
+  }, [atTarget]);
+
+  return (
+    <Shell title={`Monitor Settings — #${ticketId}`} onClose={onClose}>
+      <div className="flex flex-col gap-4 p-4">
+        <div className="flex items-center justify-between text-xs text-neutral-300">
+          <span>Refresh Rate</span>
+          <span className="tabular-nums" style={{ fontFamily: MONO_STACK }}>
+            {`${rate}Hz`}
+          </span>
+        </div>
+        <input
+          type="range"
+          min={REFRESH_MIN}
+          max={REFRESH_MAX}
+          step={1}
+          value={rate}
+          disabled={done}
+          onChange={(e) => setRate(Number(e.target.value))}
+          aria-label="Refresh Rate"
+          className="h-1 w-full cursor-pointer accent-blue-500 disabled:cursor-not-allowed"
+        />
+        <div className="flex justify-between text-[10px] tabular-nums text-neutral-500">
+          <span>{`${REFRESH_MIN}Hz`}</span>
+          <span>{`${REFRESH_MAX}Hz`}</span>
+        </div>
+        <div className="flex flex-col gap-1">
+          <div className="h-1.5 w-full overflow-hidden bg-black/60">
+            <div
+              className="h-full bg-emerald-500"
+              style={{
+                width: atTarget ? '100%' : '0%',
+                transition: atTarget ? `width ${REFRESH_HOLD_MS}ms linear` : 'none',
+              }}
+            />
+          </div>
+          <p role="status" className="h-4 text-[11px] text-neutral-400">
+            {done
+              ? 'Refresh rate diterapkan.'
+              : atTarget
+                ? 'Menerapkan 144Hz... tahan posisi slider.'
+                : 'Geser slider ke 144Hz.'}
+          </p>
+        </div>
+        <div className="flex justify-end">
+          <button type="button" onClick={onClose} disabled={done} className={ACTION_BTN}>
+            [ Batal ]
+          </button>
+        </div>
+      </div>
+    </Shell>
+  );
+}
+// <<< END PATCH
 
 function generatePassword(): string {
   return Array.from({ length: 8 }, () =>
@@ -362,6 +498,10 @@ export function TicketMiniGameModal({ ticketId, kind, onComplete, onClose }: Tic
       return <TerminalGame ticketId={ticketId} onComplete={onComplete} onClose={onClose} />;
     case 'dropdown':
       return <DropdownGame ticketId={ticketId} onComplete={onComplete} onClose={onClose} />;
+    case 'dropdown_ip':
+      return <IpDropdownGame ticketId={ticketId} onComplete={onComplete} onClose={onClose} />;
+    case 'slider_refresh':
+      return <SliderRefreshGame ticketId={ticketId} onComplete={onComplete} onClose={onClose} />;
     case 'print_spooler':
       return <PrintSpoolerGame ticketId={ticketId} onComplete={onComplete} onClose={onClose} />;
     case 'password':
@@ -370,5 +510,7 @@ export function TicketMiniGameModal({ ticketId, kind, onComplete, onClose }: Tic
       return <CodeCompletionGame onComplete={onComplete} onClose={onClose} />;
     case 'cable':
       return <NetworkPatchMiniGame ticketId={ticketId} onComplete={onComplete} onClose={onClose} />;
+    default:
+      return null;
   }
 }

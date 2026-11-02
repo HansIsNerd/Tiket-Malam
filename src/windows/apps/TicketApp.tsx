@@ -4,11 +4,9 @@ import { useGameStore } from '@core/stores/gameStore';
 import type { FlagPath, Flags } from '@core/stores/gameStore';
 import { useUiStore } from '@core/stores/uiStore';
 import { loadTicketData } from '@core/services/dataLoader';
-import type { Ticket, TicketPriority } from '@core/types/tickets';
+import type { Ticket, TicketMinigame, TicketPriority } from '@core/types/tickets';
 import { cx } from '@core/utils/cx';
 import { TicketMiniGameModal } from '@windows/TicketMiniGameModal';
-
-const SHIFT_TICKET_TOTAL = 12;
 
 const PRIORITY_LABEL: Record<TicketPriority, string> = {
   low: 'Rendah',
@@ -21,6 +19,26 @@ const REMOTE_WINDOW = { appId: 'remote', title: 'Remote', size: { width: 860, he
 const ACTION_BTN =
   'h-8 border border-neutral-500 bg-transparent px-4 text-xs font-semibold tracking-wider text-neutral-200 transition-colors hover:bg-white/10';
 
+// >>> START PATCH
+const TICKET_MINIGAMES: Record<number, TicketMinigame> = {
+  4459: 'dropdown_ip',
+  4460: 'terminal',
+  4461: 'terminal',
+  4462: 'print_spooler',
+  4463: 'slider_refresh',
+};
+
+function resolveMinigame(ticket: Ticket): TicketMinigame | undefined {
+  return TICKET_MINIGAMES[ticket.number] ?? ticket.minigame;
+}
+
+function resolveDoneFlag(ticket: Ticket): string | undefined {
+  if (ticket.doneFlag !== undefined) return ticket.doneFlag;
+  if (TICKET_MINIGAMES[ticket.number] !== undefined) return `act1.ticket${ticket.number}Done`;
+  return undefined;
+}
+// <<< END PATCH
+
 function readFlag(flags: Flags, path: string): boolean {
   const [section, key] = path.split('.');
   if (!section || !key) return false;
@@ -29,7 +47,10 @@ function readFlag(flags: Flags, path: string): boolean {
 }
 
 function isDone(flags: Flags, ticket: Ticket): boolean {
-  return ticket.doneFlag !== undefined && readFlag(flags, ticket.doneFlag);
+  // >>> START PATCH
+  const doneFlag = resolveDoneFlag(ticket);
+  return doneFlag !== undefined && readFlag(flags, doneFlag);
+  // <<< END PATCH
 }
 
 function isVisible(flags: Flags, ticket: Ticket): boolean {
@@ -70,6 +91,10 @@ function TicketActions({ ticket }: TicketActionsProps) {
 
   const isSpecial = ticket.closeButtonDisappears === true;
   const showClose = !(isSpecial && closeClicked);
+  // >>> START PATCH
+  const minigame = resolveMinigame(ticket);
+  const doneFlag = resolveDoneFlag(ticket);
+  // <<< END PATCH
 
   const handleClose = () => {
     if (isSpecial) {
@@ -90,14 +115,17 @@ function TicketActions({ ticket }: TicketActionsProps) {
 
   const handleResolveDone = () => {
     setResolveOpen(false);
-    const doneFlag = ticket.doneFlag;
+    // >>> START PATCH
     if (doneFlag === undefined) return;
     if (readFlag(useGameStore.getState().flags, doneFlag)) return;
     setFlag(doneFlag as FlagPath, true as never);
     incrementTicketsCompleted();
+    // <<< END PATCH
   };
 
-  if (ticket.minigame !== undefined) {
+  // >>> START PATCH
+  if (minigame !== undefined) {
+    // <<< END PATCH
     return (
       <>
         <div className="mt-auto flex h-14 shrink-0 items-center gap-2 border-t border-[var(--os-border)] bg-[var(--os-panel)] px-4">
@@ -108,7 +136,9 @@ function TicketActions({ ticket }: TicketActionsProps) {
         {resolveOpen ? (
           <TicketMiniGameModal
             ticketId={String(ticket.number)}
-            kind={ticket.minigame}
+            // >>> START PATCH
+            kind={minigame}
+            // <<< END PATCH
             onComplete={handleResolveDone}
             onClose={() => setResolveOpen(false)}
           />
@@ -193,7 +223,6 @@ export function TicketApp() {
   const activeTicket = tickets.find((t) => t.id === activeTicketId) ?? null;
   const activeTicketNumber = activeTicket?.number ?? null;
   const activeStatus = activeTicket ? effectiveStatus(flags, activeTicket) : null;
-  const completedCount = Math.min(flags.act1.ticketsCompleted, SHIFT_TICKET_TOTAL);
 
   useEffect(() => {
     if (activeTicketNumber === 4471) setFlag('act1.ticket4471Seen', true);
@@ -205,9 +234,6 @@ export function TicketApp() {
   return (
     <div className="relative flex h-full w-full bg-[var(--os-bg)] text-neutral-100">
       <aside className="flex w-[350px] shrink-0 flex-col border-r border-[var(--os-border)] bg-[var(--os-panel)]">
-        <div className="border-b border-[var(--os-border)] px-3 py-2 text-[11px] font-semibold text-neutral-300">
-          {`Antrean Shift Malam: ${completedCount} / ${SHIFT_TICKET_TOTAL} Selesai`}
-        </div>
         <div className="grid grid-cols-[64px_1fr_64px] border-b border-[var(--os-border)] px-3 py-2 text-[10px] uppercase tracking-wider text-neutral-500">
           <span>No.</span>
           <span>Subjek</span>
