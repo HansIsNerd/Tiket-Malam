@@ -2,11 +2,22 @@ import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useEndingStore } from '@core/stores/endingStore';
 import type { EndingId } from '@core/stores/endingStore';
-import { resetSavedGame } from '@core/stores/gameStore';
+import { resetSavedGame, useGameStore } from '@core/stores/gameStore';
 
 const FADE_DURATION_S = 3;
 const LINE_STAGGER_S = 3.2;
 const BUTTON_DELAY_MS = 10000;
+
+// >>> START PATCH
+const TITLE_DELAY_S = 0.4;
+const NARRATION_OFFSET_S = 2.4;
+
+const ENDING_TITLES: Record<EndingId, string> = {
+  lapor: 'ENDING 1: Pahit Tapi Benar',
+  hapus: 'ENDING 2: Selamat Tapi Kotor',
+  keluar: 'ENDING 3: Ambigu',
+  lanjut: 'SECRET: Workaholic',
+};
 
 const ENDING_LINES: Record<EndingId, readonly string[]> = {
   'lapor': [
@@ -36,6 +47,7 @@ const ENDING_LINES: Record<EndingId, readonly string[]> = {
 
 export function EndingScene() {
   const ending = useEndingStore((s) => s.ending);
+  const unlockEnding = useGameStore((s) => s.unlockEnding);
   const [showButton, setShowButton] = useState<boolean>(false);
 
   useEffect(() => {
@@ -44,6 +56,11 @@ export function EndingScene() {
       window.clearTimeout(timer);
     };
   }, []);
+
+  useEffect(() => {
+    if (ending === null) return;
+    unlockEnding(ending);
+  }, [ending, unlockEnding]);
 
   const handleBackToMenu = () => {
     resetSavedGame();
@@ -60,13 +77,27 @@ export function EndingScene() {
       aria-live="polite"
       className="relative flex h-full w-full flex-col items-center justify-center bg-black px-6 text-center text-neutral-300"
     >
+      <motion.h1
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: FADE_DURATION_S, delay: TITLE_DELAY_S, ease: 'easeOut' }}
+        className="absolute inset-x-0 top-12 px-6 text-3xl font-bold tracking-[0.2em] text-neutral-100"
+      >
+        {ENDING_TITLES[ending]}
+      </motion.h1>
       <div className="flex max-w-xl flex-col gap-4">
         {lines.map((line, i) => (
           <motion.p
             key={line}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ duration: FADE_DURATION_S, delay: 1 + i * LINE_STAGGER_S, ease: 'easeOut' }}
+            // >>> START PATCH
+            transition={{
+              duration: FADE_DURATION_S,
+              delay: NARRATION_OFFSET_S + i * LINE_STAGGER_S,
+              ease: 'easeOut',
+            }}
+            // <<< END PATCH
             className="text-lg leading-relaxed"
           >
             {line}

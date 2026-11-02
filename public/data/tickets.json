@@ -53,7 +53,7 @@
       "description": "Printer IT macet lagi. Kertas nyangkut di tray.",
       "closedBy": "player",
       "resolution": "Kertas yang nyangkut ditarik. Printer normal.",
-      "minigame": "mash",
+      "minigame": "print_spooler",
       "doneFlag": "act1.ticket4462Done"
     },
     {
@@ -67,7 +67,7 @@
       "description": "Monitor saya berkedip terus. Bikin pusing.",
       "closedBy": "player",
       "resolution": "Pengaturan display diperbaiki. Layar stabil.",
-      "minigame": "toggle",
+      "minigame": "slider_refresh",
       "doneFlag": "act1.ticket4463Done"
     },
     {

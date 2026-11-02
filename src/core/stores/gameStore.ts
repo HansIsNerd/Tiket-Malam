@@ -115,6 +115,7 @@ interface GameState {
   act: number;
   timeCurrent: string;
   inGame: boolean;
+  unlockedEndings: string[];
   chatData: ChatData | null;
   ticketData: TicketData | null;
   mailData: MailData | null;
@@ -131,6 +132,7 @@ interface GameState {
   setDirectoryData: (data: DirectoryData) => void;
   setFlag: <P extends FlagPath>(path: P, value: FlagValue<P>) => void;
   incrementTicketsCompleted: () => void;
+  unlockEnding: (endingType: string) => void;
   completeBoot: (name?: string) => void;
 }
 
@@ -139,6 +141,7 @@ interface PersistedGameState {
   act: number;
   timeCurrent: string;
   inGame: boolean;
+  unlockedEndings: string[];
   flags: Flags;
 }
 
@@ -150,7 +153,12 @@ let persistenceLocked = false;
 export function resetSavedGame(): void {
   persistenceLocked = true;
   try {
+    const endings = useGameStore.getState().unlockedEndings;
     window.localStorage.removeItem(SAVE_KEY);
+    window.localStorage.setItem(
+      SAVE_KEY,
+      JSON.stringify({ state: { unlockedEndings: endings }, version: SAVE_VERSION }),
+    );
   } catch {
     // penyimpanan tidak tersedia
   }
@@ -188,6 +196,7 @@ export const useGameStore = create<GameState>()(
       act: 1,
       timeCurrent: '22:47',
       inGame: false,
+      unlockedEndings: [],
       chatData: null,
       ticketData: null,
       mailData: null,
@@ -305,6 +314,13 @@ export const useGameStore = create<GameState>()(
           },
         })),
 
+      unlockEnding: (endingType) =>
+        set((state) =>
+          state.unlockedEndings.includes(endingType)
+            ? state
+            : { unlockedEndings: [...state.unlockedEndings, endingType] },
+        ),
+
       completeBoot: (name) => {
         const trimmed = name?.trim();
         set(trimmed ? { playerName: trimmed, inGame: true } : { inGame: true });
@@ -321,18 +337,27 @@ export const useGameStore = create<GameState>()(
         act: state.act,
         timeCurrent: state.timeCurrent,
         inGame: state.inGame,
+        // >>> START PATCH
+        unlockedEndings: state.unlockedEndings,
+        // <<< END PATCH
         flags: state.flags,
       }),
       merge: (persisted, current) => {
         const saved = persisted as Partial<PersistedGameState> | undefined;
         if (!saved) return current;
-        if (saved.flags?.act2?.e10Instruction) return current;
+        // >>> START PATCH
+        const unlockedEndings = Array.isArray(saved.unlockedEndings)
+          ? saved.unlockedEndings
+          : current.unlockedEndings;
+        if (saved.flags?.act2?.e10Instruction) return { ...current, unlockedEndings };
+        // <<< END PATCH
         return {
           ...current,
           playerName: saved.playerName ?? current.playerName,
           act: saved.act ?? current.act,
           timeCurrent: saved.timeCurrent ?? current.timeCurrent,
           inGame: saved.inGame ?? false,
+          unlockedEndings,
           flags: {
             act1: { ...current.flags.act1, ...saved.flags?.act1 },
             act2: { ...current.flags.act2, ...saved.flags?.act2 },
