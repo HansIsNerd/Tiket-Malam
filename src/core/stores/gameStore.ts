@@ -20,6 +20,7 @@ export interface Act1Flags {
   remoteOpened: boolean;
   dartoNudgeTicketSent: boolean;
   dartoNudgeRemoteSent: boolean;
+  serverPatched: boolean;
 }
 
 export interface Act2Flags {
@@ -188,6 +189,7 @@ export const useGameStore = create<GameState>()(
           remoteOpened: false,
           dartoNudgeTicketSent: false,
           dartoNudgeRemoteSent: false,
+          serverPatched: false,
         },
         act2: {
           e02LogOpened: false,

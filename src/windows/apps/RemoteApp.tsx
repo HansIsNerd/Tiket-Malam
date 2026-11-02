@@ -1,8 +1,10 @@
-import { useEffect, useState } from 'react';
-import { FileSpreadsheet, FileText, Folder, Lock, Loader2, X } from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
+import { FileSpreadsheet, FileText, Folder, Loader2, Lock, Server, X } from 'lucide-react';
 import { useGameStore } from '@core/stores/gameStore';
+import { useNotificationStore } from '@core/stores/notificationStore';
 import { cx } from '@core/utils/cx';
 import { RemoteWebcam } from '@windows/apps/RemoteWebcam';
+import { ServerPatchGame } from '@windows/apps/ServerPatchGame';
 
 const REMOTE_HOST = 'L4-PC-01';
 const CONNECT_DELAY_MS = 3000;
@@ -10,6 +12,8 @@ const READ_DELAY_MS = 3000;
 const JANGAN_BUKA_NAME = 'jangan_buka.txt';
 const JANGAN_BUKA_TEXT = 'kamu telat 11 bulan. — bagas.p';
 const LOG_NAME = 'log_akses.csv';
+const SERVER_RACK_NAME = 'server_rack.exe';
+const BAGAS_WARNING = 'Kamu menyambungkannya ke pintu yang salah.';
 
 type Phase = 'connecting' | 'connected';
 
@@ -21,6 +25,7 @@ export function RemoteApp() {
   const [folderOpen, setFolderOpen] = useState<boolean>(false);
   const [viewerOpen, setViewerOpen] = useState<boolean>(false);
   const [deniedNotice, setDeniedNotice] = useState<boolean>(false);
+  const [gameOpen, setGameOpen] = useState<boolean>(false);
 
   const webcamVisible = phase === 'connected' && bagasContact;
 
@@ -52,6 +57,18 @@ export function RemoteApp() {
     setFlag('act2.e15WebcamSeen', true);
   }, [webcamVisible, setFlag]);
 
+  const handlePatchComplete = useCallback(() => {
+    const alreadyPatched = useGameStore.getState().flags.act1.serverPatched;
+    setGameOpen(false);
+    if (alreadyPatched) return;
+    useGameStore.getState().setFlag('act1.serverPatched', true);
+    useNotificationStore.getState().addNotification({
+      title: 'bagas.p',
+      message: BAGAS_WARNING,
+      appId: 'chat',
+    });
+  }, []);
+
   if (phase === 'connecting') {
     return (
       <div className="flex h-full w-full flex-col items-center justify-center gap-4 bg-[var(--os-bg)] text-neutral-200">
@@ -63,7 +80,7 @@ export function RemoteApp() {
 
   return (
     <div className="relative flex h-full w-full flex-col bg-black text-neutral-100">
-      <div className="flex min-h-0 flex-1 p-3">
+      <div className="flex min-h-0 flex-1 gap-2 p-3">
         <button
           type="button"
           onClick={() => {
@@ -74,6 +91,15 @@ export function RemoteApp() {
         >
           <Folder size={36} strokeWidth={1.5} className="shrink-0 text-amber-400" />
           <span>arsip</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setGameOpen(true)}
+          title={SERVER_RACK_NAME}
+          className="flex h-24 w-24 flex-col items-center gap-2 self-start rounded-md px-1 py-2 text-[11px] text-neutral-200 transition-colors hover:bg-white/10"
+        >
+          <Server size={36} strokeWidth={1.5} className="shrink-0 text-neutral-300" />
+          <span className="w-full break-all text-center leading-tight">{SERVER_RACK_NAME}</span>
         </button>
       </div>
 
@@ -178,6 +204,10 @@ export function RemoteApp() {
             </div>
           </div>
         </div>
+      ) : null}
+
+      {gameOpen ? (
+        <ServerPatchGame onComplete={handlePatchComplete} onClose={() => setGameOpen(false)} />
       ) : null}
     </div>
   );

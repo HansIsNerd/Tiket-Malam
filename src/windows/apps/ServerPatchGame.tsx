@@ -1,0 +1,247 @@
+import { useEffect, useRef, useState } from 'react';
+import type { DragEvent } from 'react';
+import { Check, Server, X } from 'lucide-react';
+import { cx } from '@core/utils/cx';
+
+type ColorId = 'red' | 'blue' | 'green' | 'yellow';
+
+interface ColorMeta {
+  id: ColorId;
+  label: string;
+  hex: string;
+}
+
+const COLORS: readonly ColorMeta[] = [
+  { id: 'red', label: 'Merah', hex: '#DC2626' },
+  { id: 'blue', label: 'Biru', hex: '#2563EB' },
+  { id: 'green', label: 'Hijau', hex: '#16A34A' },
+  { id: 'yellow', label: 'Kuning', hex: '#EAB308' },
+];
+
+const COMPLETE_DELAY_MS = 700;
+const ERROR_RESET_MS = 1200;
+const ERROR_TEXT = 'Warna tidak cocok.';
+
+function shuffle<T>(items: readonly T[]): T[] {
+  const copy = [...items];
+  for (let i = copy.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    const a = copy[i] as T;
+    copy[i] = copy[j] as T;
+    copy[j] = a;
+  }
+  return copy;
+}
+
+function buildCableOrder(): ColorMeta[] {
+  let order = shuffle(COLORS);
+  let guard = 0;
+  while (order.every((c, i) => c.id === COLORS[i]?.id) && guard < 10) {
+    order = shuffle(COLORS);
+    guard += 1;
+  }
+  return order;
+}
+
+type ConnectedMap = Record<ColorId, boolean>;
+
+const INITIAL_CONNECTED: ConnectedMap = {
+  red: false,
+  blue: false,
+  green: false,
+  yellow: false,
+};
+
+interface ServerPatchGameProps {
+  onComplete: () => void;
+  onClose: () => void;
+}
+
+export function ServerPatchGame({ onComplete, onClose }: ServerPatchGameProps) {
+  const [cables] = useState<ColorMeta[]>(buildCableOrder);
+  const [connected, setConnected] = useState<ConnectedMap>(INITIAL_CONNECTED);
+  const [selected, setSelected] = useState<ColorId | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const errorTimerRef = useRef<number | null>(null);
+  const completedRef = useRef<boolean>(false);
+
+  const allConnected = COLORS.every((c) => connected[c.id]);
+
+  useEffect(() => {
+    return () => {
+      if (errorTimerRef.current !== null) window.clearTimeout(errorTimerRef.current);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!allConnected || completedRef.current) return;
+    const timer = window.setTimeout(() => {
+      if (completedRef.current) return;
+      completedRef.current = true;
+      onComplete();
+    }, COMPLETE_DELAY_MS);
+    return () => {
+      window.clearTimeout(timer);
+    };
+  }, [allConnected, onComplete]);
+
+  const showError = () => {
+    setError(ERROR_TEXT);
+    if (errorTimerRef.current !== null) window.clearTimeout(errorTimerRef.current);
+    errorTimerRef.current = window.setTimeout(() => {
+      setError(null);
+      errorTimerRef.current = null;
+    }, ERROR_RESET_MS);
+  };
+
+  const tryConnect = (portId: ColorId, cableId: ColorId) => {
+    if (connected[cableId] || connected[portId]) return;
+    if (portId === cableId) {
+      setConnected((prev) => ({ ...prev, [cableId]: true }));
+      setSelected(null);
+      setError(null);
+      return;
+    }
+    setSelected(null);
+    showError();
+  };
+
+  const handlePortClick = (portId: ColorId) => {
+    if (selected === null) return;
+    tryConnect(portId, selected);
+  };
+
+  const handleCableClick = (cableId: ColorId) => {
+    if (connected[cableId]) return;
+    setSelected((prev) => (prev === cableId ? null : cableId));
+    setError(null);
+  };
+
+  const handleDragStart = (e: DragEvent<HTMLButtonElement>, cableId: ColorId) => {
+    if (connected[cableId]) {
+      e.preventDefault();
+      return;
+    }
+    e.dataTransfer.setData('text/plain', cableId);
+    e.dataTransfer.effectAllowed = 'move';
+    setSelected(cableId);
+  };
+
+  const handleDrop = (e: DragEvent<HTMLButtonElement>, portId: ColorId) => {
+    e.preventDefault();
+    const raw = e.dataTransfer.getData('text/plain');
+    const cable = COLORS.find((c) => c.id === raw);
+    if (!cable) return;
+    tryConnect(portId, cable.id);
+  };
+
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label="server_rack.exe"
+      className="absolute inset-0 z-30 flex items-center justify-center bg-black/60 p-4"
+    >
+      <div className="flex max-h-full w-full max-w-lg flex-col border border-neutral-500 bg-[var(--os-panel)] shadow-[0_10px_30px_rgba(0,0,0,0.6)]">
+        <div className="flex h-9 shrink-0 items-center justify-between border-b border-[var(--os-border)] pl-3 text-xs text-neutral-100">
+          <span className="flex min-w-0 items-center gap-2">
+            <Server size={14} strokeWidth={1.5} className="shrink-0" />
+            <span className="truncate">server_rack.exe</span>
+          </span>
+          <button
+            type="button"
+            aria-label="Tutup"
+            onClick={onClose}
+            className="flex h-9 w-10 items-center justify-center transition-colors hover:bg-[#E81123] hover:text-white"
+          >
+            <X size={14} strokeWidth={1.5} />
+          </button>
+        </div>
+
+        <div className="flex flex-col gap-4 p-4">
+          <p className="text-xs text-neutral-400">
+            Sambungkan setiap kabel ke port dengan warna yang sama.
+          </p>
+
+          <div className="grid grid-cols-2 gap-8">
+            <div className="flex flex-col gap-2">
+              <h3 className="text-[10px] uppercase tracking-wider text-neutral-500">Port</h3>
+              {COLORS.map((port) => {
+                const done = connected[port.id];
+                return (
+                  <button
+                    key={port.id}
+                    type="button"
+                    onClick={() => handlePortClick(port.id)}
+                    onDragOver={(e) => e.preventDefault()}
+                    onDrop={(e) => handleDrop(e, port.id)}
+                    aria-label={`Port ${port.label}${done ? ' terhubung' : ''}`}
+                    className={cx(
+                      'flex h-12 items-center gap-3 border bg-[var(--os-bg)] px-3 text-left text-xs text-neutral-200 transition-colors',
+                      done
+                        ? 'border-emerald-500/60'
+                        : selected !== null
+                          ? 'border-neutral-300 hover:bg-white/10'
+                          : 'border-[var(--os-border)]',
+                    )}
+                  >
+                    <span
+                      className="h-4 w-4 shrink-0 rounded-full ring-2 ring-black/40"
+                      style={{ backgroundColor: port.hex }}
+                    />
+                    <span className="flex-1 truncate">{port.label}</span>
+                    {done ? <Check size={14} strokeWidth={2.5} className="text-emerald-500" /> : null}
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <h3 className="text-[10px] uppercase tracking-wider text-neutral-500">Kabel</h3>
+              {cables.map((cable) => {
+                const done = connected[cable.id];
+                const isSelected = selected === cable.id;
+                return (
+                  <button
+                    key={cable.id}
+                    type="button"
+                    draggable={!done}
+                    onDragStart={(e) => handleDragStart(e, cable.id)}
+                    onDragEnd={() => setSelected(null)}
+                    onClick={() => handleCableClick(cable.id)}
+                    disabled={done}
+                    aria-label={`Kabel ${cable.label}${done ? ' terpasang' : ''}`}
+                    aria-pressed={isSelected}
+                    className={cx(
+                      'flex h-12 items-center gap-3 border bg-[var(--os-bg)] px-3 text-left text-xs text-neutral-200 transition-colors',
+                      done
+                        ? 'cursor-default border-[var(--os-border)] opacity-30'
+                        : isSelected
+                          ? 'cursor-grab border-white bg-white/10'
+                          : 'cursor-grab border-[var(--os-border)] hover:bg-white/10',
+                    )}
+                  >
+                    <span
+                      className="h-2 w-8 shrink-0 rounded-full"
+                      style={{ backgroundColor: cable.hex }}
+                    />
+                    <span className="flex-1 truncate">{cable.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="flex h-5 items-center justify-between text-[11px]">
+            <span role="alert" className="text-red-400">
+              {error ?? ''}
+            </span>
+            <span className="tabular-nums text-neutral-500">
+              {COLORS.filter((c) => connected[c.id]).length}/{COLORS.length}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
