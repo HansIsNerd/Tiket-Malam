@@ -1,7 +1,8 @@
-import { useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { CSSProperties, PointerEvent } from 'react';
 import { motion } from 'framer-motion';
 import { useUiStore } from '@core/stores/uiStore';
+import { useGameStore } from '@core/stores/gameStore';
 import type { Position, WindowInstance } from '@core/types';
 import { cx } from '@core/utils/cx';
 import { Copy, Minus, Square, X } from 'lucide-react';
@@ -15,6 +16,7 @@ import { FileExplorerApp } from '@windows/apps/FileExplorerApp';
 import { DirectoryApp } from '@windows/apps/DirectoryApp';
 import { RemoteApp } from '@windows/apps/RemoteApp';
 import { LogApp } from '@windows/apps/LogApp';
+// import { CctvApp } from '@windows/apps/CctvApp';
 
 interface WindowFrameProps {
   window: WindowInstance;
@@ -24,6 +26,30 @@ interface DragState {
   pointerId: number;
   offsetX: number;
   offsetY: number;
+}
+
+const MOBILE_BREAKPOINT = 768;
+const TASKBAR_HEIGHT_PX = 48;
+const MOBILE_FRAME_HEIGHT = 'calc(100vh - 40px)';
+
+function detectMobile(): boolean {
+  return typeof window !== 'undefined' && window.innerWidth < MOBILE_BREAKPOINT;
+}
+
+function useIsMobile(): boolean {
+  const [isMobile, setIsMobile] = useState<boolean>(detectMobile);
+
+  useEffect(() => {
+    const onResize = () => setIsMobile(detectMobile());
+    window.addEventListener('resize', onResize);
+    window.addEventListener('orientationchange', onResize);
+    return () => {
+      window.removeEventListener('resize', onResize);
+      window.removeEventListener('orientationchange', onResize);
+    };
+  }, []);
+
+  return isMobile;
 }
 
 const CONTROL_BTN = 'flex h-8 w-11 items-center justify-center transition-colors hover:bg-white/10';
@@ -44,6 +70,8 @@ function renderApp(appId: string) {
       return <RemoteApp />;
     case 'log':
       return <LogApp />;
+    case 'cctv':
+      // return <CctvApp />;
     case 'dummy':
     default:
       return <DummyApp />;
@@ -56,14 +84,19 @@ export function WindowFrame({ window: win }: WindowFrameProps) {
   const moveWindow = useUiStore((s) => s.moveWindow);
   const minimizeWindow = useUiStore((s) => s.minimizeWindow);
   const toggleMaximize = useUiStore((s) => s.toggleMaximizeWindow);
+  const remoteStuck = useGameStore(
+    // (s) => s.flags.act2.e16RemoteStuck && !s.flags.act2.e16RemoteReleased,
+  );
   const dragRef = useRef<DragState | null>(null);
+  const isMobile = useIsMobile();
 
   if (win.isMinimized || win.isHidden) return null;
 
   const AppIcon = getAppMeta(win.appId)?.icon;
+  const closeHidden = win.appId === 'remote' && remoteStuck;
 
   const handleTitlePointerDown = (e: PointerEvent<HTMLElement>) => {
-    if (e.button !== 0 || win.isMaximized) return;
+    if (e.button !== 0 || win.isMaximized || isMobile) return;
     e.currentTarget.setPointerCapture(e.pointerId);
     dragRef.current = {
       pointerId: e.pointerId,
@@ -90,15 +123,25 @@ export function WindowFrame({ window: win }: WindowFrameProps) {
     }
   };
 
-  const frameStyle: CSSProperties = win.isMaximized
-    ? { left: 0, top: 0, width: '100%', height: 'calc(100% - 3rem)', zIndex: win.zIndex }
-    : {
-        left: win.position.x,
-        top: win.position.y,
-        width: win.size.width,
-        height: win.size.height,
+  const frameStyle: CSSProperties = isMobile
+    ? {
+        left: 0,
+        top: 0,
+        width: '100%',
+        height: MOBILE_FRAME_HEIGHT,
+        maxHeight: `calc(100% - ${TASKBAR_HEIGHT_PX}px)`,
         zIndex: win.zIndex,
-      };
+      }
+    : win.isMaximized
+      ? { left: 0, top: 0, width: '100%', height: 'calc(100% - 3rem)', zIndex: win.zIndex }
+      : {
+          left: win.position.x,
+          top: win.position.y,
+          width: win.size.width,
+          height: win.size.height,
+          zIndex: win.zIndex,
+        };
+  const fullBleed = isMobile || win.isMaximized;
 
   return (
     <motion.div
@@ -110,7 +153,7 @@ export function WindowFrame({ window: win }: WindowFrameProps) {
       style={frameStyle}
       className={cx(
         'absolute flex flex-col overflow-hidden border bg-[#1E1E22] transition-[box-shadow,border-color] duration-200',
-        win.isMaximized ? 'rounded-none' : 'rounded-lg',
+        fullBleed ? 'rounded-none' : 'rounded-lg',
         win.isFocused
           ? 'border-white/20 border-t-white/30 shadow-[0_20px_50px_rgba(0,0,0,0.6)]'
           : 'border-white/10 border-t-white/20 shadow-[0_10px_25px_rgba(0,0,0,0.35)]',
@@ -121,7 +164,8 @@ export function WindowFrame({ window: win }: WindowFrameProps) {
         onPointerMove={handleTitlePointerMove}
         onPointerUp={handleTitlePointerUp}
         onPointerCancel={handleTitlePointerUp}
-        onDoubleClick={() => toggleMaximize(win.id)}
+        onDoubleClick={isMobile ? undefined : () => toggleMaximize(win.id)}
+        style={{ touchAction: 'none' }}
         className={cx(
           'flex h-8 shrink-0 cursor-default touch-none select-none items-center justify-between bg-[#1E1E22]/90 pl-3 text-xs backdrop-blur-md',
           win.isFocused ? 'text-neutral-100' : 'text-neutral-400',
@@ -144,30 +188,36 @@ export function WindowFrame({ window: win }: WindowFrameProps) {
           >
             <Minus size={14} strokeWidth={1.5} />
           </button>
-          <button
-            type="button"
-            aria-label={win.isMaximized ? 'Restore' : 'Maximize'}
-            onPointerDown={(e) => e.stopPropagation()}
-            onDoubleClick={(e) => e.stopPropagation()}
-            onClick={() => toggleMaximize(win.id)}
-            className={CONTROL_BTN}
-          >
-            {win.isMaximized ? (
-              <Copy size={13} strokeWidth={1.5} />
-            ) : (
-              <Square size={13} strokeWidth={1.5} />
-            )}
-          </button>
-          <button
-            type="button"
-            aria-label="Close"
-            onPointerDown={(e) => e.stopPropagation()}
-            onDoubleClick={(e) => e.stopPropagation()}
-            onClick={() => closeWindow(win.id)}
-            className="flex h-8 w-11 items-center justify-center transition-colors hover:bg-[#E81123] hover:text-white"
-          >
-            <X size={14} strokeWidth={1.5} />
-          </button>
+          {isMobile ? null : (
+            <button
+              type="button"
+              aria-label={win.isMaximized ? 'Restore' : 'Maximize'}
+              onPointerDown={(e) => e.stopPropagation()}
+              onDoubleClick={(e) => e.stopPropagation()}
+              onClick={() => toggleMaximize(win.id)}
+              className={CONTROL_BTN}
+            >
+              {win.isMaximized ? (
+                <Copy size={13} strokeWidth={1.5} />
+              ) : (
+                <Square size={13} strokeWidth={1.5} />
+              )}
+            </button>
+          )}
+          {closeHidden ? (
+            <div aria-hidden="true" className="h-8 w-11" />
+          ) : (
+            <button
+              type="button"
+              aria-label="Close"
+              onPointerDown={(e) => e.stopPropagation()}
+              onDoubleClick={(e) => e.stopPropagation()}
+              onClick={() => closeWindow(win.id)}
+              className="flex h-8 w-11 items-center justify-center transition-colors hover:bg-[#E81123] hover:text-white"
+            >
+              <X size={14} strokeWidth={1.5} />
+            </button>
+          )}
         </div>
       </header>
       <div className="min-h-0 flex-1 overflow-auto">{renderApp(win.appId)}</div>

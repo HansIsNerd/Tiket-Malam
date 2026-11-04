@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import {
   Battery,
   Bluetooth,
+  // Monitor,
   Moon,
   Plane,
   Sun,
@@ -199,6 +200,7 @@ function CalendarPopup() {
 
 export function Taskbar() {
   const timeCurrent = useGameStore((s) => s.timeCurrent);
+  // const ssIconActive = useGameStore((s) => s.flags.mac.ssIconActive);
   const windows = useUiStore((s) => s.windows);
   const focusWindow = useUiStore((s) => s.focusWindow);
   const minimizeWindow = useUiStore((s) => s.minimizeWindow);
@@ -223,6 +225,11 @@ export function Taskbar() {
       focusWindow(id);
     }
   };
+
+  // const handleScreenSharing = () => {
+  //   if (!useGameStore.getState().flags.mac.ssIconActive) return;
+  //   useUiStore.getState().setScene('macos');
+  // };
 
   return (
     <>
@@ -249,7 +256,7 @@ export function Taskbar() {
             aria-expanded={isStartMenuOpen}
             onClick={toggleStartMenu}
             className={cx(
-              'flex h-9 w-9 items-center justify-center rounded-md transition-colors hover:bg-white/10',
+              'flex h-10 w-10 items-center justify-center rounded-md transition-colors hover:bg-white/10',
               isStartMenuOpen && 'bg-white/10',
             )}
           >
@@ -257,14 +264,14 @@ export function Taskbar() {
           </button>
         </div>
 
-        <div className="flex items-center justify-center gap-1">
+        <div className="flex max-w-full items-center justify-center gap-1.5 overflow-x-auto">
           {windows
             .filter((win) => !win.isHidden)
             .map((win) => {
               const Icon = getAppMeta(win.appId)?.icon;
               const isFocused = win.isFocused && !win.isMinimized;
               return (
-                <div key={win.id} className="relative">
+                <div key={win.id} className="relative shrink-0">
                   <AnimatePresence>
                     {hoveredId === win.id ? (
                       <motion.div
@@ -288,11 +295,11 @@ export function Taskbar() {
                     whileTap={{ scale: 0.95 }}
                     transition={{ type: 'spring', stiffness: 400, damping: 20 }}
                     className={cx(
-                      'relative flex h-10 w-10 items-center justify-center rounded-md text-neutral-100 transition-colors hover:bg-white/10',
+                      'relative flex h-11 min-w-[44px] items-center justify-center rounded-md px-2.5 text-neutral-100 transition-colors hover:bg-white/10',
                       isFocused && 'bg-white/10',
                     )}
                   >
-                    {Icon ? <Icon size={20} strokeWidth={1.5} /> : null}
+                    {Icon ? <Icon size={32} strokeWidth={1.5} /> : null}
                     <NotificationBadge count={badges[win.appId] ?? 0} />
                     <span
                       className={cx(
@@ -307,13 +314,31 @@ export function Taskbar() {
         </div>
 
         <div className="flex items-center justify-end gap-1">
+          <AnimatePresence>
+            {/* {ssIconActive ? (
+              <motion.button
+                key="screen-sharing"
+                type="button"
+                aria-label="Screen Sharing"
+                title="Screen Sharing"
+                onClick={handleScreenSharing}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 1.2, ease: 'easeOut' }}
+                className="flex h-10 w-10 items-center justify-center rounded-md text-neutral-300 transition-colors hover:bg-white/10"
+              >
+                <Monitor size={14} strokeWidth={1.75} />
+              </motion.button>
+            ) : null} */}
+          </AnimatePresence>
           <button
             type="button"
             aria-label="Quick settings"
             aria-expanded={activeTrayMenu === 'quick_settings'}
             onClick={() => setTrayMenu('quick_settings')}
             className={cx(
-              'flex h-9 items-center gap-2 rounded-md px-2 text-neutral-300 transition-colors hover:bg-white/10',
+              'flex h-10 items-center gap-2 rounded-md px-2.5 text-neutral-300 transition-colors hover:bg-white/10',
               activeTrayMenu === 'quick_settings' && 'bg-white/10',
             )}
           >
@@ -327,7 +352,7 @@ export function Taskbar() {
             aria-expanded={activeTrayMenu === 'calendar'}
             onClick={() => setTrayMenu('calendar')}
             className={cx(
-              'flex h-9 flex-col items-end justify-center rounded-md px-2 leading-tight text-neutral-200 transition-colors hover:bg-white/10',
+              'flex h-10 flex-col items-end justify-center rounded-md px-2.5 leading-tight text-neutral-200 transition-colors hover:bg-white/10',
               activeTrayMenu === 'calendar' && 'bg-white/10',
             )}
           >
